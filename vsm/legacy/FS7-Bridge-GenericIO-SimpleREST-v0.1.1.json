@@ -1,0 +1,446 @@
+{
+  "restApi": {
+    "endpoints": [
+      {
+        "path": "/api/v1/vsm/feedback",
+        "methods": {
+          "getFeedback": {
+            "method": "GET",
+            "timeout": 2000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromJson"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/vsm/trigger",
+        "methods": {
+          "fire": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "emberTree": {
+    "identifier": "FS7_Generic",
+    "children": [
+      {
+        "identifier": "Trigger01",
+        "description": "Generic trigger 01",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/1"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger02",
+        "description": "Generic trigger 02",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/2"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger03",
+        "description": "Generic trigger 03",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/3"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger04",
+        "description": "Generic trigger 04",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/4"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger05",
+        "description": "Generic trigger 05",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/5"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger06",
+        "description": "Generic trigger 06",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/6"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger07",
+        "description": "Generic trigger 07",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/7"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger08",
+        "description": "Generic trigger 08",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/8"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger09",
+        "description": "Generic trigger 09",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/9"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger10",
+        "description": "Generic trigger 10",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/10"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger11",
+        "description": "Generic trigger 11",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/11"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger12",
+        "description": "Generic trigger 12",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/12"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger13",
+        "description": "Generic trigger 13",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/13"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger14",
+        "description": "Generic trigger 14",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/14"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger15",
+        "description": "Generic trigger 15",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/15"
+          }
+        }
+      },
+      {
+        "identifier": "Trigger16",
+        "description": "Generic trigger 16",
+        "type": "command",
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/vsm/trigger",
+            "method": "fire",
+            "resource": "/16"
+          }
+        }
+      },
+      {
+        "identifier": "Feedback",
+        "description": "Polled bridge and camera feedback",
+        "polling": 1,
+        "commands": {
+          "getDir": {
+            "path": "/api/v1/vsm/feedback",
+            "method": "getFeedback"
+          }
+        },
+        "children": [
+          {
+            "identifier": "Bool",
+            "children": [
+              {
+                "identifier": "B1",
+                "type": "bool",
+                "writeable": false
+              },
+              {
+                "identifier": "B2",
+                "type": "bool",
+                "writeable": false
+              },
+              {
+                "identifier": "B3",
+                "type": "bool",
+                "writeable": false
+              },
+              {
+                "identifier": "B4",
+                "type": "bool",
+                "writeable": false
+              },
+              {
+                "identifier": "B5",
+                "type": "bool",
+                "writeable": false
+              },
+              {
+                "identifier": "B6",
+                "type": "bool",
+                "writeable": false
+              },
+              {
+                "identifier": "B7",
+                "type": "bool",
+                "writeable": false
+              },
+              {
+                "identifier": "B8",
+                "type": "bool",
+                "writeable": false
+              }
+            ]
+          },
+          {
+            "identifier": "Int",
+            "children": [
+              {
+                "identifier": "I1",
+                "type": "int",
+                "writeable": false
+              },
+              {
+                "identifier": "I2",
+                "type": "int",
+                "writeable": false
+              },
+              {
+                "identifier": "I3",
+                "type": "int",
+                "writeable": false
+              },
+              {
+                "identifier": "I4",
+                "type": "int",
+                "writeable": false
+              },
+              {
+                "identifier": "I5",
+                "type": "int",
+                "writeable": false
+              },
+              {
+                "identifier": "I6",
+                "type": "int",
+                "writeable": false
+              },
+              {
+                "identifier": "I7",
+                "type": "int",
+                "writeable": false
+              },
+              {
+                "identifier": "I8",
+                "type": "int",
+                "writeable": false
+              }
+            ]
+          },
+          {
+            "identifier": "Float",
+            "children": [
+              {
+                "identifier": "F1",
+                "type": "float",
+                "writeable": false
+              },
+              {
+                "identifier": "F2",
+                "type": "float",
+                "writeable": false
+              },
+              {
+                "identifier": "F3",
+                "type": "float",
+                "writeable": false
+              },
+              {
+                "identifier": "F4",
+                "type": "float",
+                "writeable": false
+              },
+              {
+                "identifier": "F5",
+                "type": "float",
+                "writeable": false
+              },
+              {
+                "identifier": "F6",
+                "type": "float",
+                "writeable": false
+              },
+              {
+                "identifier": "F7",
+                "type": "float",
+                "writeable": false
+              },
+              {
+                "identifier": "F8",
+                "type": "float",
+                "writeable": false
+              }
+            ]
+          },
+          {
+            "identifier": "Text",
+            "children": [
+              {
+                "identifier": "T1",
+                "type": "string",
+                "writeable": false
+              },
+              {
+                "identifier": "T2",
+                "type": "string",
+                "writeable": false
+              },
+              {
+                "identifier": "T3",
+                "type": "string",
+                "writeable": false
+              },
+              {
+                "identifier": "T4",
+                "type": "string",
+                "writeable": false
+              },
+              {
+                "identifier": "T5",
+                "type": "string",
+                "writeable": false
+              },
+              {
+                "identifier": "T6",
+                "type": "string",
+                "writeable": false
+              },
+              {
+                "identifier": "T7",
+                "type": "string",
+                "writeable": false
+              },
+              {
+                "identifier": "T8",
+                "type": "string",
+                "writeable": false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

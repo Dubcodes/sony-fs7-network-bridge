@@ -1,0 +1,49 @@
+Type,Slot,Default label,Default bridge mapping,Notes
+Trigger,Trigger01,Record,record_start,Momentary trigger
+Trigger,Trigger02,Stop + Replay,stop_replay,Momentary trigger; macro runs on bridge
+Trigger,Trigger03,Stop Recording,record_stop,Momentary trigger
+Trigger,Trigger04,Rec Review,rec_review,Momentary trigger
+Trigger,Trigger05,Auto White,awb,Momentary trigger
+Trigger,Trigger06,Play,play,Momentary trigger
+Trigger,Trigger07,Pause,pause,Momentary trigger
+Trigger,Trigger08,Stop Playback,stop_playback,Momentary trigger
+Trigger,Trigger09,Auto Iris,auto_iris,Momentary trigger
+Trigger,Trigger10,Iris +,iris_up,Momentary trigger
+Trigger,Trigger11,Iris -,iris_down,Momentary trigger
+Trigger,Trigger12,Gain +,gain_up,Momentary trigger
+Trigger,Trigger13,Gain -,gain_down,Momentary trigger
+Trigger,Trigger14,ND +,nd_up,Momentary trigger
+Trigger,Trigger15,ND -,nd_down,Momentary trigger
+Trigger,Trigger16,Spare,,Unmapped by default
+Bool,B1,Camera reachable,bridge.camera_reachable,Read-only feedback
+Bool,B2,Recording,camera.recording,Real telemetry when mapped; optimistic fallback before then
+Bool,B3,Playback,camera.playback,Real telemetry when mapped; optimistic fallback before then
+Bool,B4,Replay macro busy,bridge.macro_busy,Read-only feedback
+Bool,B5,Telemetry fresh,bridge.telemetry_fresh,True when camera telemetry has succeeded in the last 3 seconds
+Bool,B6,Wi-Fi connected,bridge.wifi_connected,Bridge-to-FS7 link state
+Bool,B7,Ethernet connected,bridge.ethernet_connected,Wired LAN state
+Bool,B8,ATW,camera.atw,Read-only camera feedback
+Int,I1,White balance Kelvin,camera.white_balance_k,Read-only camera feedback
+Int,I2,Exposure Index,camera.exposure_index,Read-only camera feedback
+Int,I3,S&Q FPS,camera.sq_fps,Read-only camera feedback converted to integer
+Int,I4,Spare,,Unmapped by default
+Int,I5,Spare,,Unmapped by default
+Int,I6,Spare,,Unmapped by default
+Int,I7,Spare,,Unmapped by default
+Int,I8,Spare,,Unmapped by default
+Float,F1,Iris,camera.iris_f,Read-only camera feedback
+Float,F2,Gain dB,camera.gain_db,Read-only camera feedback
+Float,F3,Spare,,Unmapped by default
+Float,F4,Spare,,Unmapped by default
+Float,F5,Spare,,Unmapped by default
+Float,F6,Spare,,Unmapped by default
+Float,F7,Spare,,Unmapped by default
+Float,F8,Spare,,Unmapped by default
+Text,T1,White balance,camera.white_balance,Read-only display value
+Text,T2,Shutter,camera.shutter,Read-only display value
+Text,T3,ND,camera.nd,Read-only display value
+Text,T4,Gamma,camera.gamma,Read-only display value
+Text,T5,MLUT,camera.mlut,Read-only display value
+Text,T6,Camera mode,camera.camera_mode,Read-only display value
+Text,T7,Last command,bridge.last_command,Bridge diagnostic
+Text,T8,Last error,bridge.last_error,Bridge diagnostic

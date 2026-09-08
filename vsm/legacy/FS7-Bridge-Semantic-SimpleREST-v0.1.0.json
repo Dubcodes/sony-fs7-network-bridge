@@ -1,0 +1,764 @@
+{
+  "restApi": {
+    "endpoints": [
+      {
+        "path": "/api/v1/vsm/status",
+        "methods": {
+          "getStatus": {
+            "method": "GET",
+            "timeout": 2000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromJson"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/record_start",
+        "methods": {
+          "do_record_start": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/record_stop",
+        "methods": {
+          "do_record_stop": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/stop_replay",
+        "methods": {
+          "do_stop_replay": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/rec_review",
+        "methods": {
+          "do_rec_review": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/play",
+        "methods": {
+          "do_play": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/pause",
+        "methods": {
+          "do_pause": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/stop_playback",
+        "methods": {
+          "do_stop_playback": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/awb",
+        "methods": {
+          "do_awb": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/auto_iris",
+        "methods": {
+          "do_auto_iris": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/iris_up",
+        "methods": {
+          "do_iris_up": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/iris_down",
+        "methods": {
+          "do_iris_down": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/gain_up",
+        "methods": {
+          "do_gain_up": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/gain_down",
+        "methods": {
+          "do_gain_down": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/nd_up",
+        "methods": {
+          "do_nd_up": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/nd_down",
+        "methods": {
+          "do_nd_down": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/shutter_up",
+        "methods": {
+          "do_shutter_up": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/shutter_down",
+        "methods": {
+          "do_shutter_down": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/zoom_in",
+        "methods": {
+          "do_zoom_in": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/zoom_out",
+        "methods": {
+          "do_zoom_out": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/focus_near",
+        "methods": {
+          "do_focus_near": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      },
+      {
+        "path": "/api/v1/command/focus_far",
+        "methods": {
+          "do_focus_far": {
+            "method": "POST",
+            "timeout": 3000,
+            "request": {
+              "headers": {
+                "accept": "application/json"
+              }
+            },
+            "reply": {
+              "parseAction": "fromState"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "emberTree": {
+    "identifier": "FS7Bridge",
+    "children": [
+      {
+        "identifier": "Record",
+        "description": "Start recording",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/record_start",
+            "method": "do_record_start"
+          }
+        }
+      },
+      {
+        "identifier": "StopRecording",
+        "description": "Stop recording",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/record_stop",
+            "method": "do_record_stop"
+          }
+        }
+      },
+      {
+        "identifier": "StopReplay",
+        "description": "Stop recording, wait locally, then Rec Review",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/stop_replay",
+            "method": "do_stop_replay"
+          }
+        }
+      },
+      {
+        "identifier": "RecReview",
+        "description": "Play the most recently recorded clip using Rec Review",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/rec_review",
+            "method": "do_rec_review"
+          }
+        }
+      },
+      {
+        "identifier": "Play",
+        "description": "Playback play",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/play",
+            "method": "do_play"
+          }
+        }
+      },
+      {
+        "identifier": "Pause",
+        "description": "Playback pause",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/pause",
+            "method": "do_pause"
+          }
+        }
+      },
+      {
+        "identifier": "StopPlayback",
+        "description": "Playback stop",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/stop_playback",
+            "method": "do_stop_playback"
+          }
+        }
+      },
+      {
+        "identifier": "AutoWhite",
+        "description": "Trigger auto white balance",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/awb",
+            "method": "do_awb"
+          }
+        }
+      },
+      {
+        "identifier": "AutoIris",
+        "description": "Trigger/enable auto iris",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/auto_iris",
+            "method": "do_auto_iris"
+          }
+        }
+      },
+      {
+        "identifier": "IrisUp",
+        "description": "Iris increment",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/iris_up",
+            "method": "do_iris_up"
+          }
+        }
+      },
+      {
+        "identifier": "IrisDown",
+        "description": "Iris decrement",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/iris_down",
+            "method": "do_iris_down"
+          }
+        }
+      },
+      {
+        "identifier": "GainUp",
+        "description": "Gain/EI increment",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/gain_up",
+            "method": "do_gain_up"
+          }
+        }
+      },
+      {
+        "identifier": "GainDown",
+        "description": "Gain/EI decrement",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/gain_down",
+            "method": "do_gain_down"
+          }
+        }
+      },
+      {
+        "identifier": "NDUp",
+        "description": "ND increment",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/nd_up",
+            "method": "do_nd_up"
+          }
+        }
+      },
+      {
+        "identifier": "NDDown",
+        "description": "ND decrement",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/nd_down",
+            "method": "do_nd_down"
+          }
+        }
+      },
+      {
+        "identifier": "ShutterUp",
+        "description": "Shutter increment",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/shutter_up",
+            "method": "do_shutter_up"
+          }
+        }
+      },
+      {
+        "identifier": "ShutterDown",
+        "description": "Shutter decrement",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/shutter_down",
+            "method": "do_shutter_down"
+          }
+        }
+      },
+      {
+        "identifier": "ZoomIn",
+        "description": "Zoom in",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/zoom_in",
+            "method": "do_zoom_in"
+          }
+        }
+      },
+      {
+        "identifier": "ZoomOut",
+        "description": "Zoom out",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/zoom_out",
+            "method": "do_zoom_out"
+          }
+        }
+      },
+      {
+        "identifier": "FocusNear",
+        "description": "Focus near",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/focus_near",
+            "method": "do_focus_near"
+          }
+        }
+      },
+      {
+        "identifier": "FocusFar",
+        "description": "Focus far",
+        "type": "command",
+        "writeable": true,
+        "valueChangeTrigger": true,
+        "commands": {
+          "valueChange": {
+            "path": "/api/v1/command/focus_far",
+            "method": "do_focus_far"
+          }
+        }
+      },
+      {
+        "identifier": "Status",
+        "description": "Bridge and camera status",
+        "type": "node",
+        "polling": 1,
+        "commands": {
+          "getDir": {
+            "path": "/api/v1/vsm/status",
+            "method": "getStatus"
+          }
+        },
+        "children": [
+          {
+            "identifier": "deviceName",
+            "type": "string"
+          },
+          {
+            "identifier": "version",
+            "type": "string"
+          },
+          {
+            "identifier": "lastCommand",
+            "type": "string"
+          },
+          {
+            "identifier": "lastError",
+            "type": "string"
+          },
+          {
+            "identifier": "lastSonyHttpStatus",
+            "type": "int"
+          },
+          {
+            "identifier": "lastSonyResponseMs",
+            "type": "int"
+          },
+          {
+            "identifier": "uptimeSeconds",
+            "type": "int"
+          },
+          {
+            "identifier": "ethernet",
+            "type": "node",
+            "children": [
+              {
+                "identifier": "connected",
+                "type": "bool"
+              },
+              {
+                "identifier": "ip",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "identifier": "wifi",
+            "type": "node",
+            "children": [
+              {
+                "identifier": "connected",
+                "type": "bool"
+              },
+              {
+                "identifier": "ip",
+                "type": "string"
+              },
+              {
+                "identifier": "rssi",
+                "type": "int"
+              }
+            ]
+          },
+          {
+            "identifier": "camera",
+            "type": "node",
+            "children": [
+              {
+                "identifier": "reachable",
+                "type": "bool"
+              },
+              {
+                "identifier": "recording",
+                "type": "bool"
+              },
+              {
+                "identifier": "playback",
+                "type": "bool"
+              },
+              {
+                "identifier": "macroBusy",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "identifier": "network",
+            "type": "node",
+            "children": [
+              {
+                "identifier": "subnetOverlap",
+                "type": "bool"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

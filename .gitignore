@@ -1,0 +1,42 @@
+# PlatformIO and IDE state
+.pio/
+.vscode/
+.idea/
+
+# Python caches and environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local/editor/OS debris
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.log
+*~
+
+# Firmware/build and packaging output
+firmware/
+*.bin
+*.elf
+*.map
+dist/
+build/
+package-check*/
+RELEASE_MANIFEST.sha256
+
+# Local camera capture/session output and downloaded Sony assets
+test-artifacts/
+fs7-requests*.jsonl
+fs7-session*.json
+mock-requests*.jsonl
+*-cookie.txt
+fs7-assets/
+mock-scan/
+*.har
+*.pcap
+*.pcapng
+*.mp4
