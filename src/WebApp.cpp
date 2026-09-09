@@ -620,6 +620,7 @@ String WebApp::catalogJson() {
   for (const auto &c : COMMANDS) {
     JsonObject o = arr.add<JsonObject>();
     o["id"] = c.id; o["label"] = c.label; o["group"] = c.group; o["style"] = c.style; o["defaultVisible"] = c.defaultVisible;
+    o["holdOnly"] = isHoldOnlyCommand(c.id);
     if (String(c.id) == "stop_replay") {
       bool stop = store_.commandMapping("record_stop").configured() || store_.commandMapping("record_toggle").configured();
       o["configured"] = stop && store_.commandMapping("rec_review").configured();

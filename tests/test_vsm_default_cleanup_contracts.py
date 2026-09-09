@@ -18,10 +18,10 @@ class VsmDefaultCleanupContracts(unittest.TestCase):
             self.assertNotIn(f'"{command}"', defaults)
         for slot in range(9, 17):
             self.assertIn(f"Trigger,Trigger{slot:02d},Spare,,Unmapped by default", CSV)
-        self.assertIn("catalog.commands.filter(c=>c.configured)", PAGES)
+        self.assertIn("catalog.commands.filter(c=>c.configured&&!c.holdOnly)", PAGES)
         self.assertIn("unavailable (preserved)", PAGES)
         self.assertIn("if (!readFile(VSM_GENERIC_PATH, raw)) return false;", CFG)
-        self.assertIn("vsmGenericMap_ = raw;", CFG)
+        self.assertIn("canonicalizeVsmGenericMap(input.as<JsonObjectConst>(), clean)", CFG)
 
 
 if __name__ == "__main__":

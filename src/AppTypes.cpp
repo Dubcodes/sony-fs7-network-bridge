@@ -60,6 +60,11 @@ const std::array<CommandDescriptor, COMMAND_COUNT> COMMANDS = {{
     {"sq_off", "S&Q Off", "Recording", "normal", false},
 }};
 
+bool isHoldOnlyCommand(const String &id) {
+  return id == "focus_near" || id == "focus_far" ||
+         id == "zoom_in" || id == "zoom_out";
+}
+
 const std::array<CameraStateDescriptor, CAMERA_STATE_COUNT> CAMERA_STATES = {{
     {"recording", "Recording", "Transport", "bool", false},
     {"playback", "Playback", "Transport", "bool", false},

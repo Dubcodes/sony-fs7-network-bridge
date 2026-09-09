@@ -38,6 +38,9 @@ CommandResult VsmGeneric::trigger(int slot) {
     return sequences_.trigger(seq);
   }
   if (!store_.validCommandId(command)) return {false, 409, "Trigger maps to unknown command", 0};
+  if (isHoldOnlyCommand(command)) {
+    return {false, 409, "Trigger maps to a hold-only lens command; use an operator hold/release control", 0};
+  }
   return engine_.execute(command);
 }
 

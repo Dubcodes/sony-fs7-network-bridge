@@ -63,7 +63,7 @@ Earlier ESP32 DevKit/W5500 work is historical and is not the current hardware ta
 5. Open `/setup`, select the FS7 SSID, enter camera Wi-Fi and Basic Auth credentials, save, and reconnect. Use `/network` for wired DHCP/static settings.
 6. Verify the camera connection, then use `/operator`. Use `/sony-native` if the custom console lacks a needed control.
 
-For an isolated direct cable without DHCP, select static addressing on `/network`. The retained recovery profile is bridge `10.77.7.2/24` and laptop `10.77.7.1/24`; it is not an automatic fallback. Camera Wi-Fi and management Ethernet remain separate interfaces, and Sony traffic is explicitly bound to Wi-Fi.
+`10.77.7.2` is not active automatically on a fresh DHCP-configured unit. For isolated direct-cable operation, first obtain access through a real DHCP network, select static addressing on `/network`, save, and reboot. The retained profile is bridge `10.77.7.2/24` and laptop `10.77.7.1/24`. Camera Wi-Fi and management Ethernet remain separate interfaces, and Sony traffic is explicitly bound to Wi-Fi.
 
 ## Operator and configuration pages
 

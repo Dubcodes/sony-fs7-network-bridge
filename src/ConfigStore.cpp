@@ -64,6 +64,33 @@ bool validHost(const String &text) {
   return true;
 }
 
+void canonicalizeVsmGenericMap(JsonObjectConst source, JsonDocument &clean) {
+  JsonArray triggers = clean["triggers"].to<JsonArray>();
+  for (int i = 0; i < 16; ++i) {
+    JsonObjectConst existing = source["triggers"][i].as<JsonObjectConst>();
+    JsonObject dst = triggers.add<JsonObject>();
+    dst["slot"] = i + 1;
+    dst["label"] = existing["label"].is<const char *>()
+        ? existing["label"].as<String>() : ("Trigger " + String(i + 1));
+    dst["command"] = existing["command"].is<const char *>()
+        ? existing["command"].as<String>() : "";
+  }
+
+  const char *groups[] = {"bools", "ints", "floats", "texts"};
+  for (const char *group : groups) {
+    JsonArray slots = clean[group].to<JsonArray>();
+    for (int i = 0; i < 8; ++i) {
+      JsonObjectConst existing = source[group][i].as<JsonObjectConst>();
+      JsonObject dst = slots.add<JsonObject>();
+      dst["slot"] = i + 1;
+      dst["label"] = existing["label"].is<const char *>()
+          ? existing["label"].as<String>() : (String(group) + " " + String(i + 1));
+      dst["source"] = existing["source"].is<const char *>()
+          ? existing["source"].as<String>() : "";
+    }
+  }
+}
+
 bool validHttpMethod(String method) {
   method.toUpperCase();
   return method == "GET" || method == "POST" || method == "PUT" ||
@@ -583,7 +610,7 @@ bool ConfigStore::saveLayoutJson(const String &json, String &error) {
   for (JsonVariant v : in["items"].as<JsonArray>()) {
     if (!v.is<const char *>()) continue;
     String id = v.as<String>();
-    if (!validCommandId(id)) continue;
+    if (!validCommandId(id) || isHoldOnlyCommand(id)) continue;
     bool duplicate = false;
     for (JsonVariant existing : outItems) if (id == existing.as<String>()) { duplicate = true; break; }
     if (!duplicate) outItems.add(id);
@@ -879,18 +906,24 @@ void ConfigStore::setDefaultVsmGenericMap() {
 bool ConfigStore::loadVsmGenericMap() {
   String raw;
   if (!readFile(VSM_GENERIC_PATH, raw)) return false;
-  JsonDocument doc;
-  if (deserializeJson(doc, raw) || !doc["triggers"].is<JsonArray>() || !doc["bools"].is<JsonArray>() || !doc["ints"].is<JsonArray>() || !doc["floats"].is<JsonArray>() || !doc["texts"].is<JsonArray>()) return false;
-  vsmGenericMap_ = raw;
+  JsonDocument input;
+  if (deserializeJson(input, raw) || !input.is<JsonObject>()) return false;
+  JsonDocument clean;
+  canonicalizeVsmGenericMap(input.as<JsonObjectConst>(), clean);
+  String text; serializeJsonPretty(clean, text);
+  vsmGenericMap_ = text;
+  if (text != raw && !writeFileAtomic(VSM_GENERIC_PATH, text)) {
+    Serial.println("[storage] warning: canonical VSM slot map active in RAM but could not be persisted");
+  }
   return true;
 }
 
 bool ConfigStore::saveVsmGenericMapJson(const String &json, String &error) {
   JsonDocument in;
-  if (deserializeJson(in, json)) { error = "Invalid JSON"; return false; }
-  const char *groups[] = {"triggers","bools","ints","floats","texts"};
-  for (const char *group : groups) if (!in[group].is<JsonArray>()) { error = String("Missing array: ") + group; return false; }
-  String text; serializeJsonPretty(in, text);
+  if (deserializeJson(in, json) || !in.is<JsonObject>()) { error = "Invalid JSON object"; return false; }
+  JsonDocument clean;
+  canonicalizeVsmGenericMap(in.as<JsonObjectConst>(), clean);
+  String text; serializeJsonPretty(clean, text);
   if (!writeFileAtomic(VSM_GENERIC_PATH, text)) { error = "Could not write VSM generic map"; return false; }
   vsmGenericMap_ = text;
   return true;
@@ -956,6 +989,10 @@ bool ConfigStore::saveSequencesJson(const String &json, String &error) {
         if (type == "command") {
           String command = so["command"] | "";
           if (!validCommandId(command)) continue;
+          if (isHoldOnlyCommand(command)) {
+            error = "Hold-only lens movement commands cannot be used as sequence steps";
+            return false;
+          }
           if (command == "stop_replay") {
             error = "stop_replay is asynchronous and cannot be used as a sequence step";
             return false;

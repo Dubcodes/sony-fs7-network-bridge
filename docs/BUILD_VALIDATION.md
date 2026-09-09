@@ -2,7 +2,7 @@
 
 ## Qualified release
 
-Release candidate `0.2.13-field-patch` was locally validated on 2026-09-09 with:
+Release candidate `0.2.13-field-patch` was locally validated on 2026-09-10 with:
 
 - Python 3.12
 - PlatformIO Core 6.1.19
@@ -26,11 +26,11 @@ GitHub Actions runs the same validators, host suite, and physical-target compile
 ## Latest local result
 
 - both static validators: pass
-- host tests: 106/106 pass
+- host tests: 109/109 pass
 - WT32-ETH01 build: success with `-Wall -Wextra`
 - static RAM: 74,656 / 327,680 bytes (22.8%)
-- application flash: 1,392,388 / 1,966,080 bytes (70.8%)
-- `firmware.bin`: 1,392,800 bytes (SHA-256 `C71D0DC782EC861E88D982B1557B6AC20F494C0D650A05EA0DC43F7342FA1242`)
+- application flash: 1,394,612 / 1,966,080 bytes (70.9%)
+- `firmware.bin`: 1,395,024 bytes (SHA-256 `4983676312CAAB9A687CDF960A9ACB1B1BDB36E101806276707A233DA5CF5F51`)
 
 ## What this proves
 

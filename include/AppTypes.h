@@ -61,6 +61,7 @@ struct CommandDescriptor {
 
 constexpr size_t COMMAND_COUNT = 57;
 extern const std::array<CommandDescriptor, COMMAND_COUNT> COMMANDS;
+bool isHoldOnlyCommand(const String &id);
 
 struct CameraStateDescriptor {
   const char *id;

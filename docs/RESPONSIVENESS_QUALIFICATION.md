@@ -21,8 +21,8 @@ With no Sony Native proxy page open, a clean live three-second hold recorded:
 
 | Direction | Movement writes | Mean interval | Range | Mean HTTP acknowledgement | Release stops |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Tele (`H`) | 30 | 100.35 ms | 98.76–102.19 ms | 49.93 ms | 1 |
-| Wide (`J`) | 30 | 100.25 ms | 96.94–101.44 ms | 48.98 ms | 1 |
+| Wide (`H`) | 30 | 100.35 ms | 98.76–102.19 ms | 49.93 ms | 1 |
+| Tele (`J`) | 30 | 100.25 ms | 96.94–101.44 ms | 48.98 ms | 1 |
 
 No requests overlapped. A prior stress run with three stale Sony Native `/linear` proxy sessions open produced approximately 500 ms command stalls; closing those pages restored the qualified cadence. Connection counts are exposed in `/api/v1/status` so this condition is observable.
 
@@ -48,6 +48,8 @@ A final clean `/operator` browser pass on the installed image, with no Sony Nati
 ## Remaining physical observation
 
 Wire cadence, acknowledgement serialization, and release-stop behavior are qualified. Final judgement of perceived lens smoothness and suitability at the operator position remains a physical camera/operator observation.
+
+Next physical-camera qualification should compare zoom velocity explicitly: the Sony native Tele capture used `+5`, while the current bridge `zoom_in` mapping remains the previously qualified `+4`. This checkpoint does not change that mapping.
 
 Record start and the complete Stop + Replay path were repeated on the final OTA image. Record returned an acknowledged Sony RPC, Stop + Replay reached verified playback, and Stop Playback then returned the camera from review.
 

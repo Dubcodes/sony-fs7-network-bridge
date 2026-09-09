@@ -465,6 +465,7 @@ void SonyLinear::closeConnection() {
   if (fd_ >= 0) close(fd_);
   fd_ = -1;
   connectedWifiIp_ = "";
+  if (status_) status_->cameraReachable = false;
 }
 
 void SonyLinear::applyProperty(const String &name, JsonVariantConst value) {

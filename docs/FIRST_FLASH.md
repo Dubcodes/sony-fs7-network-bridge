@@ -34,7 +34,7 @@ A normal boot identifies `0.2.13-field-patch`, the WT32-ETH01 profile, and LAN87
 
 ## Ethernet and camera setup
 
-The bridge requests an Ethernet DHCP lease. Read the leased address from serial and open `http://<bridge-ip>/setup`. For a direct cable without DHCP, deliberately choose static mode; the retained profile is bridge `10.77.7.2/24` and laptop `10.77.7.1/24` with no gateway.
+The bridge requests an Ethernet DHCP lease. Read the leased address from serial and open `http://<bridge-ip>/setup`. The retained `10.77.7.2/24` address is not active automatically on a fresh DHCP-configured unit. To prepare direct-cable operation, first obtain access through a real DHCP network, select static mode on `/network`, save, and reboot; then use bridge `10.77.7.2/24` and laptop `10.77.7.1/24` with no gateway.
 
 In setup, scan/select the FS7 SSID, enter its Wi-Fi password and current Basic Auth credentials, confirm the camera address, save, and reconnect. Test the connection before using `/operator`. The management surface is unauthenticated, so keep it on a trusted isolated network.
 

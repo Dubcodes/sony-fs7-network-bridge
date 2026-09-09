@@ -16,8 +16,8 @@ Trigger,Trigger14,Spare,,Unmapped by default
 Trigger,Trigger15,Spare,,Unmapped by default
 Trigger,Trigger16,Spare,,Unmapped by default
 Bool,B1,Camera reachable,bridge.camera_reachable,Read-only feedback
-Bool,B2,Recording,camera.recording,Real telemetry when mapped; optimistic fallback before then
-Bool,B3,Playback,camera.playback,Real telemetry when mapped; optimistic fallback before then
+Bool,B2,Recording,camera.recording,Fresh camera state; null when unavailable or stale
+Bool,B3,Playback,camera.playback,Fresh camera state; null when unavailable or stale
 Bool,B4,Replay macro busy,bridge.macro_busy,Read-only feedback
 Bool,B5,Telemetry fresh,bridge.telemetry_fresh,True when camera telemetry has succeeded in the last 3 seconds
 Bool,B6,Wi-Fi connected,bridge.wifi_connected,Bridge-to-FS7 link state

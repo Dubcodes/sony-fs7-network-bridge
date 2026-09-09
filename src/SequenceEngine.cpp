@@ -53,6 +53,10 @@ bool SequenceEngine::reload(String &error) {
           step.type = StepType::Command;
           step.command = so["command"] | "";
           if (!store_.validCommandId(step.command)) continue;
+          if (isHoldOnlyCommand(step.command)) {
+            error = "Hold-only lens movement commands cannot be used as sequence steps";
+            return false;
+          }
           if (step.command == "stop_replay") {
             error = "stop_replay is asynchronous and cannot be used as a sequence step";
             return false;

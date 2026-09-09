@@ -29,6 +29,8 @@ POST /api/v1/sequences/<1..8>/abort
 
 Command and VSM-trigger results are deterministic objects containing `ok`, `message`, and `sonyHttpStatus`. Successful commands return 2xx. Invalid input or mappings return 4xx. A camera-operation or configuration conflict returns 409 and does not bypass the Operation Arbiter.
 
+`focus_near`, `focus_far`, `zoom_in`, and `zoom_out` are low-level hold-only movement commands retained on the direct REST command endpoint for `/operator`. Other direct callers that issue one of these commands are responsible for issuing the matching `focus_stop` or `zoom_stop`; generic one-shot layouts, sequences, and VSM triggers intentionally exclude them.
+
 ## Generic external-control model
 
 ```text
