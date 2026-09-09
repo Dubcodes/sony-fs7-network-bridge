@@ -30,7 +30,7 @@ Use a USB-to-TTL adapter with 3.3 V logic:
 5. Power off and remove GPIO0 from GND.
 6. Power on normally and monitor with `pio device monitor --port COMx --baud 115200`.
 
-A normal boot identifies `0.2.12-integration-cleanup`, the WT32-ETH01 profile, and LAN8720 RMII Ethernet.
+A normal boot identifies `0.2.13-field-patch`, the WT32-ETH01 profile, and LAN8720 RMII Ethernet.
 
 ## Ethernet and camera setup
 

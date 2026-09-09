@@ -46,5 +46,6 @@ class CommandEngine {
   bool freshStateSince(const String &id, uint32_t sinceMs) const;
   bool haveStateDrivenReplay() const;
   bool cameraReadyForReview() const;
-  bool dispatchReview();
+  bool waitForPlayback(uint32_t deadlineMs, String &error);
+  bool dispatchLatestClipPlayback();
 };

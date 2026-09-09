@@ -1,0 +1,27 @@
+{
+  "firmwareVersion": "0.2.13-field-patch",
+  "camera": "Sony PXW-FS7",
+  "transport": "HTTP Basic authenticated WebSocket /linear with MessagePack RPC",
+  "wireShapes": {
+    "button": "Button.SendKeys [[\"KeyName\"]]",
+    "propertySet": "Property.SetValue [{\"Property.Name\": value}]",
+    "propertyGet": "Property.GetValue [{\"Property.Name\": null}]",
+    "automaticAdjustment": "Process.Execute.AutomaticAdjustment [[\"Camera.WhiteBalance\"]]"
+  },
+  "latestClip": {
+    "steps": ["Thumbnail", "Set until acknowledged", "Play", "verify Playing"],
+    "minimumThumbnailToFirstSetMs": 4500,
+    "minimumAcceptedSetToPlayMs": 2500,
+    "overallTimeoutMs": 25000,
+    "readinessEvidence": "matched successful Set RPC response",
+    "playbackEvidence": "P.Clip.Mediabox.Status == Playing",
+    "event65540Semantics": "thumbnail update/refresh; completion meaning unproven"
+  },
+  "discoveredNotUsedAsReadiness": [
+    "P.Clip.Mediabox.TotalClips",
+    "P.Clip.Mediabox.ClipPosition",
+    "Clip.GetList",
+    "Clip.GetThumbnailUrls"
+  ],
+  "capturePolicy": "Raw captures and Sony assets are local-only and Git-ignored"
+}

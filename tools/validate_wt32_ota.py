@@ -17,7 +17,7 @@ def forbid(rel: str, token: str, message: str):
         checks.append(message)
 
 need("platformio.ini", "board = wt32-eth01", "PlatformIO board must be wt32-eth01")
-need("platformio.ini", 'FS7B_VERSION=\\"0.2.12-integration-cleanup\\"', "firmware version must be v0.2.12 integration cleanup")
+need("platformio.ini", 'FS7B_VERSION=\\"0.2.13-field-patch\\"', "firmware version must be v0.2.13 field patch")
 for tok in ("FS7B_ETH_PHY_ADDR=1", "FS7B_ETH_MDC=23", "FS7B_ETH_MDIO=18", "FS7B_ETH_POWER=16"):
     need("platformio.ini", tok, f"missing WT32 build flag {tok}")
 for tok in ("ETH_PHY_LAN8720", "ETH_CLOCK_GPIO0_IN", "ETH.begin("):
@@ -47,7 +47,11 @@ forbid("src/SonyLinear.cpp", 'Alternate.Authentication.Basic', "FS7 native page 
 need("src/ConfigStore.cpp", 'setLinearMapping(commands, "record_stop", "Clip.Recorder.Stop", "[]"', "FS7-native exact recorder stop mapping is missing")
 need("src/ConfigStore.cpp", 'setLinearMapping(commands, "rec_review", "Button.SendKeys", "[[\\"Thumbnail\\"]]"', "FS7-native Thumbnail Rec Review mapping is missing")
 need("src/ConfigStore.cpp", 'setLinearMapping(commands, "awb", "Process.Execute.AutomaticAdjustment"', "FS7-native Auto White mapping is missing")
-need("src/CommandEngine.cpp", 'setKey.rpcParams = "[[\\"Set\\"]]"', "FS7-native Rec Review Set follow-up is missing")
+need("src/CommandEngine.cpp", 'runMapped("cursor_set")', "FS7-native Rec Review Set follow-up is missing")
+need("src/CommandEngine.cpp", "delay(store_.config().recReviewSetDelayMs)", "Rec Review Set delay must use persisted configuration")
+need("src/CommandEngine.cpp", "Timed out waiting for Sony RPC response", "Thumbnail readiness must distinguish an ignored Set")
+need("src/CommandEngine.cpp", "P.Clip.Mediabox.Status", "latest-clip playback must verify the camera status")
+need("src/SonyRemote.cpp", 'rawRequest("GET", "/rm.html"', "camera-session /rm.html warmup is missing")
 need("src/WebApp.cpp", 'text/html; charset=utf-8', "bridge HTML must explicitly declare UTF-8")
 need("src/SonyProxy.cpp", "SESSION_SLOT_WAIT_MS = 1500", "Sony native proxy must queue brief asset bursts instead of immediately rejecting them")
 need("src/ConfigStore.cpp", 's["enabled"] = false', "telemetry sources must remain disabled by default")

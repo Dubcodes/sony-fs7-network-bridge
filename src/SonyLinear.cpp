@@ -1,4 +1,5 @@
 #include "SonyLinear.h"
+#include "CameraState.h"
 
 #include <WiFi.h>
 #include <lwip/sockets.h>
@@ -212,7 +213,11 @@ bool encodeRpc(uint32_t id, const String &method, const String &paramsJson,
   if (paramsJson.length() > 4096) { error = "Sony RPC params exceed limit"; return false; }
   JsonDocument paramsDoc;
   if (deserializeJson(paramsDoc, paramsJson)) { error = "Sony RPC params must be valid JSON"; return false; }
-  if (!paramsDoc.as<JsonVariantConst>().is<JsonArrayConst>()) { error = "Sony RPC params must be a JSON array"; return false; }
+  JsonVariantConst params = paramsDoc.as<JsonVariantConst>();
+  if (!params.is<JsonArrayConst>() && !params.is<JsonObjectConst>()) {
+    error = "Sony RPC params must be a JSON array or object";
+    return false;
+  }
 
   out.clear();
   out.reserve(method.length() + paramsJson.length() + 32);
@@ -272,9 +277,13 @@ bool recvWsMessage(int fd, std::vector<uint8_t> &payload, uint8_t &opcode, Strin
     if (op == 0x8) { error = "Camera closed the WebSocket"; return false; }
     if (op == 0x9) { // ping
       if (!sendWsFrame(fd, 0xA, part.data(), part.size(), error)) return false;
+      if (!started) { opcode = 0xA; payload.clear(); return true; }
       continue;
     }
-    if (op == 0xA) continue;
+    if (op == 0xA) {
+      if (!started) { opcode = 0xA; payload.clear(); return true; }
+      continue;
+    }
     if (op == 0x1 || op == 0x2) {
       if (started) { error = "Unexpected new WebSocket message during fragmentation"; return false; }
       started = true; opcode = op;
@@ -341,10 +350,26 @@ bool skipMsgpack(const std::vector<uint8_t> &buf, size_t &p, int depth, String *
     p += n; return true;
   }
   if ((c & 0xF0) == 0x90) {
-    uint32_t n = c & 0x0F; for (uint32_t i=0;i<n;++i) if(!skipMsgpack(buf,p,depth+1)) return false; return true;
+    uint32_t n = c & 0x0F;
+    for (uint32_t i=0;i<n;++i) {
+      String item;
+      if(!skipMsgpack(buf,p,depth+1,summary && i == 0 ? &item : nullptr)) return false;
+      if (summary && i == 0) *summary = item;
+    }
+    return true;
   }
   if ((c & 0xF0) == 0x80) {
-    uint32_t n = c & 0x0F; for(uint32_t i=0;i<n;++i){if(!skipMsgpack(buf,p,depth+1)||!skipMsgpack(buf,p,depth+1))return false;} return true;
+    uint32_t n = c & 0x0F;
+    for(uint32_t i=0;i<n;++i){
+      String key, value;
+      if(!skipMsgpack(buf,p,depth+1,summary ? &key : nullptr) ||
+         !skipMsgpack(buf,p,depth+1,summary ? &value : nullptr)) return false;
+      if (summary && summary->length() < 512) {
+        if (summary->length()) *summary += ";";
+        *summary += key + "=" + value;
+      }
+    }
+    return true;
   }
   uint64_t n = 0;
   switch (c) {
@@ -361,10 +386,20 @@ bool skipMsgpack(const std::vector<uint8_t> &buf, size_t &p, int depth, String *
     case 0xC7: { uint64_t x; if(!readLength(buf,p,1,x))return false; n=x+1; break; }
     case 0xC8: { uint64_t x; if(!readLength(buf,p,2,x))return false; n=x+1; break; }
     case 0xC9: { uint64_t x; if(!readLength(buf,p,4,x))return false; n=x+1; break; }
-    case 0xDC: { uint64_t x; if(!readLength(buf,p,2,x))return false; for(uint64_t i=0;i<x;++i)if(!skipMsgpack(buf,p,depth+1))return false; return true; }
-    case 0xDD: { uint64_t x; if(!readLength(buf,p,4,x))return false; for(uint64_t i=0;i<x;++i)if(!skipMsgpack(buf,p,depth+1))return false; return true; }
-    case 0xDE: { uint64_t x; if(!readLength(buf,p,2,x))return false; for(uint64_t i=0;i<x;++i){if(!skipMsgpack(buf,p,depth+1)||!skipMsgpack(buf,p,depth+1))return false;} return true; }
-    case 0xDF: { uint64_t x; if(!readLength(buf,p,4,x))return false; for(uint64_t i=0;i<x;++i){if(!skipMsgpack(buf,p,depth+1)||!skipMsgpack(buf,p,depth+1))return false;} return true; }
+    case 0xDC: case 0xDD: {
+      uint64_t x; if(!readLength(buf,p,c == 0xDC ? 2 : 4,x))return false;
+      for(uint64_t i=0;i<x;++i){String item;if(!skipMsgpack(buf,p,depth+1,summary && i==0?&item:nullptr))return false;if(summary&&i==0)*summary=item;}
+      return true;
+    }
+    case 0xDE: case 0xDF: {
+      uint64_t x; if(!readLength(buf,p,c == 0xDE ? 2 : 4,x))return false;
+      for(uint64_t i=0;i<x;++i){
+        String key,value;
+        if(!skipMsgpack(buf,p,depth+1,summary?&key:nullptr)||!skipMsgpack(buf,p,depth+1,summary?&value:nullptr))return false;
+        if(summary&&summary->length()<512){if(summary->length())*summary+=";";*summary+=key+"="+value;}
+      }
+      return true;
+    }
     default: p = start; return false;
   }
   if (p + n > buf.size()) return false;
@@ -410,6 +445,176 @@ bool parseRpcEnvelope(const std::vector<uint8_t> &buf, uint32_t wantedId,
 String SonyLinear::basicAuthorization() const {
   String plain = cfg_.cameraUsername + ":" + cfg_.cameraPassword;
   return base64Bytes(reinterpret_cast<const uint8_t *>(plain.c_str()), plain.length());
+}
+
+void SonyLinear::begin(CameraStateStore &cameraState, RuntimeStatus &status) {
+  cameraState_ = &cameraState;
+  status_ = &status;
+}
+
+void SonyLinear::setSocketTimeout(uint32_t timeoutMs) const {
+  if (fd_ < 0) return;
+  struct timeval tv {};
+  tv.tv_sec = timeoutMs / 1000;
+  tv.tv_usec = (timeoutMs % 1000) * 1000;
+  setsockopt(fd_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+  setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+}
+
+void SonyLinear::closeConnection() {
+  if (fd_ >= 0) close(fd_);
+  fd_ = -1;
+  connectedWifiIp_ = "";
+}
+
+void SonyLinear::applyProperty(const String &name, JsonVariantConst value) {
+  if (!cameraState_ || value.isNull()) return;
+  String raw;
+  if (value.is<const char *>()) raw = value.as<String>();
+  else if (value.is<bool>()) raw = value.as<bool>() ? "true" : "false";
+  else serializeJson(value, raw);
+
+  if (name == "P.Clip.Mediabox.Status") {
+    cameraState_->set("media_status", raw);
+    const bool recording = raw == "Recording" || raw == "RecordingWithCall";
+    const bool playing = raw == "Playing";
+    cameraState_->set("recording", recording ? "true" : "false");
+    cameraState_->set("playback", playing ? "true" : "false");
+    cameraState_->set("ready", raw == "Standby" || raw == "STBY" ? "true" : "false");
+    cameraState_->set("writing", raw.indexOf("Writing") >= 0 ? "true" : "false");
+  } else if (name == "P.Clip.Mediabox.TimeCode" || name == "P.Clip.Mediabox.TimeCode.Value") {
+    cameraState_->set("timecode", raw);
+  } else if (name == "Camera.WhiteBalance.Mode") {
+    cameraState_->set("white_balance_mode", raw);
+    cameraState_->set("white_balance", raw);
+  } else if (name.indexOf("Camera.WhiteBalance.ColorTemperature") == 0) {
+    cameraState_->set("white_balance_k", raw);
+  } else if (name == "Camera.Gain.Value") {
+    cameraState_->set("gain_db", raw);
+  } else if (name == "Camera.Gain.ExposureIndex" || name == "Camera.ExposureIndex.Value") {
+    cameraState_->set("exposure_index", raw);
+  } else if (name == "Camera.Iris.Value") {
+    cameraState_->set("iris_f", raw);
+  } else if (name.indexOf("Camera.ND") == 0 && name.endsWith("Value")) {
+    cameraState_->set("nd", raw);
+  } else if (name == "Camera.Shutter.Value") {
+    cameraState_->set("shutter", raw);
+  } else if (name == "Camera.SlowAndQuickMotion.FrameRate") {
+    cameraState_->set("sq_fps", raw);
+  } else if (name == "Paint.Gamma.Value" || name == "Paint.Gamma.Type") {
+    cameraState_->set("gamma", raw);
+  } else if (name.indexOf("LUT.Value") >= 0) {
+    cameraState_->set("mlut", raw);
+  } else if (name == "Camera.Focus.Distance") {
+    cameraState_->set("focus", raw);
+  } else if (name == "Camera.Zoom.Value" || name == "Camera.Zoom.Position") {
+    cameraState_->set("zoom", raw);
+  } else if (name == "Camera.WhiteBalance.SettingMethod") {
+    cameraState_->set("atw", raw == "ATW" || raw == "Auto" ? "true" : "false");
+  } else if (name == "Camera.Iris.SettingMethod") {
+    cameraState_->set("auto_iris", raw == "Auto" ? "true" : "false");
+  } else if (name == "Camera.Mode") {
+    cameraState_->set("camera_mode", raw);
+  }
+}
+
+void SonyLinear::mergeProperties(JsonVariantConst value) {
+  if (value.is<JsonArrayConst>()) {
+    for (JsonVariantConst item : value.as<JsonArrayConst>()) mergeProperties(item);
+    return;
+  }
+  if (!value.is<JsonObjectConst>()) return;
+  for (JsonPairConst property : value.as<JsonObjectConst>()) {
+    applyProperty(property.key().c_str(), property.value());
+  }
+  if (status_) {
+    status_->lastTelemetryMs = millis();
+    status_->lastTelemetrySource = "sony-linear-notify";
+  }
+}
+
+void SonyLinear::handleIncoming(const std::vector<uint8_t> &payload) {
+  JsonDocument doc;
+  if (deserializeMsgPack(doc, payload.data(), payload.size())) return;
+  JsonArrayConst envelope = doc.as<JsonArrayConst>();
+  if (envelope.size() < 3) return;
+  const int type = envelope[0] | -1;
+  if (type == 1 && envelope.size() == 4) mergeProperties(envelope[3]);
+  else if (type == 2) mergeProperties(envelope[2]);
+}
+
+bool SonyLinear::subscribeAndPrime(uint32_t timeoutMs, String &error) {
+  auto rpc = [this, timeoutMs, &error](const String &method, const String &params) {
+    String ignored;
+    uint32_t id = nextRequestId_++;
+    if (!nextRequestId_) nextRequestId_ = 1;
+    return sendRpc(fd_, id, method, params, timeoutMs, error, ignored);
+  };
+  if (!rpc("Notify.Subscribe", "[[\"Notify.Properties\",\"Notify.Process\",\"Notify.Property\"]]")) return false;
+  if (!rpc("Property.GetValue", "[{\"P.Clip.Mediabox.Status\":null,\"P.Clip.Mediabox.TimeCode\":null,\"P.Clip.Mediabox.ClipName\":null,\"P.Clip.Mediabox.Speed\":null}]")) return false;
+  if (!rpc("Property.GetValue", "[{\"Camera.WhiteBalance.Mode\":null,\"Camera.Shutter.Value\":null,\"Camera.Gain.Value\":null,\"Camera.Iris.Value\":null,\"Camera.SlowAndQuickMotion.FrameRate\":null}]")) return false;
+  if (!rpc("Property.GetValue", "[{\"Paint.Gamma.Value\":null,\"Camera.Focus.Distance\":null,\"Camera.Zoom.Value\":null}]")) return false;
+  return true;
+}
+
+bool SonyLinear::ensureConnected(uint32_t timeoutMs, String &error, int &httpStatus) {
+  if (WiFi.status() != WL_CONNECTED) {
+    error = "ESP32 is not connected to the FS7 Wi-Fi network";
+    closeConnection();
+    return false;
+  }
+  const String wifiIp = WiFi.localIP().toString();
+  if (fd_ >= 0 && connectedWifiIp_ == wifiIp) {
+    httpStatus = 101;
+    setSocketTimeout(timeoutMs);
+    return true;
+  }
+  closeConnection();
+  struct sockaddr_in remote {};
+  if (!resolveCamera(remote, error)) return false;
+  fd_ = openBoundSocket(remote, timeoutMs, error);
+  if (fd_ < 0) return false;
+  if (!websocketHandshake(fd_, timeoutMs, error, httpStatus)) {
+    closeConnection();
+    return false;
+  }
+  connectedWifiIp_ = wifiIp;
+  setSocketTimeout(timeoutMs);
+  if (!subscribeAndPrime(timeoutMs, error)) {
+    closeConnection();
+    return false;
+  }
+  if (status_) status_->cameraReachable = true;
+  Serial.println("[sony-linear] persistent subscribed /linear session established");
+  return true;
+}
+
+void SonyLinear::loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    closeConnection();
+    return;
+  }
+  if (fd_ < 0) {
+    const uint32_t now = millis();
+    if (static_cast<int32_t>(now - nextConnectAttemptMs_) < 0) return;
+    nextConnectAttemptMs_ = now + 1500U;
+    String error; int status = 0;
+    ensureConnected(std::min<uint32_t>(std::max<uint32_t>(cfg_.cameraTimeoutMs, 500U), 2500U), error, status);
+    return;
+  }
+  fd_set reads;
+  FD_ZERO(&reads);
+  FD_SET(fd_, &reads);
+  struct timeval tv {0, 0};
+  const int ready = select(fd_ + 1, &reads, nullptr, nullptr, &tv);
+  if (ready <= 0 || !FD_ISSET(fd_, &reads)) return;
+  setSocketTimeout(250U);
+  std::vector<uint8_t> payload; uint8_t opcode = 0; String error;
+  if (!recvWsMessage(fd_, payload, opcode, error)) {
+    closeConnection();
+    return;
+  }
+  if (opcode == 0x2) handleIncoming(payload);
 }
 
 bool SonyLinear::resolveCamera(struct sockaddr_in &remote, String &error) const {
@@ -496,8 +701,15 @@ bool SonyLinear::sendRpc(int fd, uint32_t id, const String &method, const String
   uint32_t started = millis();
   while (millis() - started <= timeoutMs) {
     std::vector<uint8_t> payload; uint8_t opcode = 0;
-    if (!recvWsMessage(fd, payload, opcode, error)) return false;
+    if (!recvWsMessage(fd, payload, opcode, error)) {
+      // SO_RCVTIMEO is an implementation detail. Callers need the stable RPC
+      // timeout semantic used by bounded retry workflows such as Thumbnail ->
+      // Set, where an ignored key deliberately has no matching response.
+      if (error == "Timed out waiting for WebSocket data") break;
+      return false;
+    }
     if (opcode != 0x2) continue;
+    handleIncoming(payload);
     bool matched = false, rpcOk = false; String rpcError, summary;
     if (!parseRpcEnvelope(payload, id, matched, rpcOk, rpcError, summary)) {
       error = "Malformed MessagePack RPC response from camera"; return false;
@@ -522,12 +734,11 @@ SonyResponse SonyLinear::request(const String &method, const String &paramsJson,
   if (WiFi.status() != WL_CONNECTED) { result.error = "ESP32 is not connected to the FS7 Wi-Fi network"; return result; }
   uint32_t timeoutMs = timeoutOverrideMs ? timeoutOverrideMs : cfg_.cameraTimeoutMs;
   timeoutMs = constrain(timeoutMs, 250U, 15000U);
-  struct sockaddr_in remote {};
-  if (!resolveCamera(remote, result.error)) return result;
-  int fd = openBoundSocket(remote, timeoutMs, result.error);
-  if (fd < 0) return result;
   int handshakeStatus = 0;
-  if (!websocketHandshake(fd, timeoutMs, result.error, handshakeStatus)) { result.httpStatus = handshakeStatus; close(fd); return result; }
+  if (!ensureConnected(timeoutMs, result.error, handshakeStatus)) {
+    result.httpStatus = handshakeStatus;
+    return result;
+  }
   result.httpStatus = 101;
   result.transportOk = true;
   // The FS7 rmt.html source creates a plain Savona client and calls client.connect()
@@ -536,11 +747,14 @@ SonyResponse SonyLinear::request(const String &method, const String &paramsJson,
   String summary;
   uint32_t id = nextRequestId_++;
   if (!nextRequestId_) nextRequestId_ = 1;
-  if (!sendRpc(fd, id, method, paramsJson, timeoutMs, result.error, summary)) { close(fd); return result; }
+  setSocketTimeout(timeoutMs);
+  if (!sendRpc(fd_, id, method, paramsJson, timeoutMs, result.error, summary)) {
+    closeConnection();
+    return result;
+  }
   result.commandOk = true;
   result.body = summary;
   result.rpcMethod = method;
-  close(fd);
   return result;
 }
 

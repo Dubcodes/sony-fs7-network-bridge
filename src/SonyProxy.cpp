@@ -461,6 +461,9 @@ void SonyProxy::sessionTask(int clientFd) {
   }
 
   Serial.printf("[sony-proxy] WebSocket /linear tunnel established\n");
+  portENTER_CRITICAL(&sessionMux_);
+  activeLinearSessions_ = static_cast<uint8_t>(activeLinearSessions_ + 1U);
+  portEXIT_CRITICAL(&sessionMux_);
   WsSniffer browserSniffer{this, true, {}};
   WsSniffer cameraSniffer{this, false, {}};
   if (!responseLeft.empty()) cameraSniffer.feed(responseLeft.data(), responseLeft.size());
@@ -488,6 +491,9 @@ void SonyProxy::sessionTask(int clientFd) {
     }
   }
   close(cameraFd); close(clientFd);
+  portENTER_CRITICAL(&sessionMux_);
+  if (activeLinearSessions_) activeLinearSessions_ = static_cast<uint8_t>(activeLinearSessions_ - 1U);
+  portEXIT_CRITICAL(&sessionMux_);
   Serial.println("[sony-proxy] WebSocket /linear tunnel closed");
 }
 
@@ -531,9 +537,6 @@ void SonyProxy::WsSniffer::feed(const uint8_t *data, size_t len) {
 
 void SonyProxy::captureWsPayload(bool fromBrowser, uint8_t opcode, const std::vector<uint8_t> &payload) {
   if (!captureEnabled_) return;
-  // Keep the capture focused on commands sent by Sony's browser UI. Camera
-  // notifications are high-volume and would quickly overwrite the useful press.
-  if (!fromBrowser) return;
   if (opcode != 0x1 && opcode != 0x2) return;
   String summary = opcode == 0x2 ? rpcSummary(payload) : String("WebSocket text frame");
   if (!summary.length()) summary = "WebSocket binary frame";
@@ -542,14 +545,15 @@ void SonyProxy::captureWsPayload(bool fromBrowser, uint8_t opcode, const std::ve
   // exact low-value write before it can overwrite operator interactions.
   static const char MENU_OPENED[] = "P.Menu.pmw-f5x.Menu.Opened";
   if (std::search(payload.begin(), payload.end(), MENU_OPENED, MENU_OPENED + strlen(MENU_OPENED)) != payload.end()) return;
-  captureEvent("browser", "websocket", summary, payload.data(), payload.size());
+  captureEvent(fromBrowser ? "browser-to-camera" : "camera-to-browser",
+               "websocket", summary, payload.data(), payload.size());
 }
 
 void SonyProxy::captureHttpRequest(const String &method, const String &path,
                                    const uint8_t *body, size_t bodyLen) {
   if (!captureEnabled_) return;
   String summary = method + " " + path;
-  captureEvent("browser", "http", summary, body, bodyLen);
+  captureEvent("browser-to-camera", "http", summary, body, bodyLen);
 }
 
 void SonyProxy::captureEvent(const char *direction, const char *kind, const String &summary,
@@ -588,7 +592,7 @@ void SonyProxy::clearCapture() {
 void SonyProxy::startCapture() {
   clearCapture();
   captureEnabled_ = true;
-  Serial.println("[sony-proxy] capture started (RAM-only, browser -> FS7 requests)");
+  Serial.println("[sony-proxy] capture started (RAM-only, bidirectional WebSocket)");
 }
 
 void SonyProxy::stopCapture() {
@@ -601,7 +605,7 @@ String SonyProxy::captureJson() {
   out.reserve(12288);
   out = "{\"enabled\":";
   out += captureEnabled_ ? "true" : "false";
-  out += ",\"mode\":\"ram-only browser-to-camera\",\"entries\":[";
+  out += ",\"mode\":\"ram-only bounded bidirectional-websocket\",\"entries\":[";
 
   uint8_t count, head;
   portENTER_CRITICAL(&captureMux_);

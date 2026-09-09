@@ -25,7 +25,7 @@ class Wt32OtaContractTests(unittest.TestCase):
     def test_01_platformio_targets_real_wt32_board(self):
         self.assertRegex(PIO, r"(?m)^default_envs\s*=\s*wt32-eth01\s*$")
         self.assertRegex(PIO, r"(?m)^board\s*=\s*wt32-eth01\s*$")
-        self.assertIn('FS7B_VERSION=\\"0.2.12-integration-cleanup\\"', PIO)
+        self.assertIn('FS7B_VERSION=\\"0.2.13-field-patch\\"', PIO)
 
     def test_02_lan8720_profile_is_exact_and_w5500_init_is_gone(self):
         for token in (

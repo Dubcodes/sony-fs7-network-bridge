@@ -46,6 +46,7 @@ void setup() {
   if (!configStore.begin()) Serial.println("FATAL: persistent storage could not be initialized");
 
   String error;
+  sonyRemote.begin(cameraState, runtimeStatus);
   telemetryManager.begin();
   if (!sequenceEngine.begin(error)) Serial.printf("[sequence] config load failed: %s\n", error.c_str());
   if (!vsmGeneric.reload(error)) Serial.printf("[vsm] generic map load failed: %s\n", error.c_str());
@@ -60,6 +61,7 @@ void setup() {
 
 void loop() {
   networkManager.loop();
+  sonyRemote.loop();
   commandEngine.loop();
   sequenceEngine.loop();
   webApp.loop();

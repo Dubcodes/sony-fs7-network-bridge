@@ -31,7 +31,7 @@ class WifiConfigPersistenceContracts(unittest.TestCase):
         self.assertIn('autocomplete="new-password"', PAGES)
 
     def test_04_release_identity_advanced(self):
-        self.assertIn('FS7B_VERSION=\\"0.2.12-integration-cleanup\\"', PLATFORM)
+        self.assertIn('FS7B_VERSION=\\"0.2.13-field-patch\\"', PLATFORM)
 
 
 if __name__ == '__main__':

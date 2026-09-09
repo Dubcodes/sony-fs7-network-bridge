@@ -20,6 +20,7 @@ Thumbs.db
 
 # Firmware/build and packaging output
 firmware/
+backups/
 *.bin
 *.elf
 *.map
@@ -29,6 +30,7 @@ package-check*/
 RELEASE_MANIFEST.sha256
 
 # Local camera capture/session output and downloaded Sony assets
+captures/
 test-artifacts/
 fs7-requests*.jsonl
 fs7-session*.json

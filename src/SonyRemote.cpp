@@ -114,6 +114,7 @@ bool SonyRemote::resolveCamera(struct sockaddr_in &remote, String &error) const 
 
 SonyResponse SonyRemote::send(const SonyCommandMapping &mapping, size_t maxBodyBytes) {
   if (mapping.transport == "linear") {
+    primeCameraSession();
     return linear_.request(mapping.rpcMethod, mapping.rpcParams);
   }
   return rawRequest(mapping.method, mapping.path, mapping.body,
@@ -121,11 +122,52 @@ SonyResponse SonyRemote::send(const SonyCommandMapping &mapping, size_t maxBodyB
 }
 
 SonyResponse SonyRemote::testConnection() {
-  return rawRequest("GET", "/rm.html", "", "text/plain", "", 8192);
+  SonyResponse result = rawRequest("GET", "/rm.html", "", "text/plain", "", 8192);
+  if (result.transportOk && result.httpStatus >= 200 && result.httpStatus < 300) {
+    cameraSessionPrimed_ = true;
+    primedWifiIp_ = WiFi.localIP().toString();
+  }
+  return result;
 }
 
 SonyResponse SonyRemote::testLinear() {
+  primeCameraSession();
   return linear_.test();
+}
+
+void SonyRemote::begin(CameraStateStore &cameraState, RuntimeStatus &status) {
+  linear_.begin(cameraState, status);
+}
+
+void SonyRemote::loop() {
+  if (WiFi.status() == WL_CONNECTED) primeCameraSession();
+  linear_.loop();
+}
+
+SonyResponse SonyRemote::linearRequest(const String &method, const String &paramsJson,
+                                       uint32_t timeoutMs) {
+  primeCameraSession();
+  return linear_.request(method, paramsJson, timeoutMs);
+}
+
+void SonyRemote::primeCameraSession() {
+  if (WiFi.status() != WL_CONNECTED) {
+    cameraSessionPrimed_ = false;
+    primedWifiIp_ = "";
+    return;
+  }
+  const String wifiIp = WiFi.localIP().toString();
+  if (cameraSessionPrimed_ && primedWifiIp_ == wifiIp) return;
+  // Some real FS7 sessions do not begin responding reliably until its native
+  // remote entry page has been requested. Reproduce that harmless handshake
+  // once per camera-Wi-Fi association before the first direct /linear command.
+  SonyResponse warmup = rawRequest("GET", "/rm.html", "", "text/plain", "", 8192, 3000);
+  const bool confirmed = warmup.transportOk && warmup.httpStatus >= 200 && warmup.httpStatus < 300;
+  // Do not make every command pay another three-second warmup penalty if the
+  // camera did not answer this optional request; /linear still gets its chance.
+  cameraSessionPrimed_ = true;
+  primedWifiIp_ = wifiIp;
+  Serial.printf("[sony] /rm.html session warmup %s\n", confirmed ? "ok" : "not confirmed");
 }
 
 bool SonyRemote::wifiConnected() const { return WiFi.status() == WL_CONNECTED; }

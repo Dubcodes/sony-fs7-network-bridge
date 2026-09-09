@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.2.13-field-patch
+
+- Set the fresh-install Ethernet/DHCP hostname to `FS7-WiFi-Bridge` while preserving explicitly stored device names during upgrades.
+- Added a dedicated `/network` page and minimal Ethernet-only API for persistent DHCP or static WT32-ETH01 addressing, with client/server IPv4 validation and optional save-and-reboot.
+- Preserved DHCP as the backward-compatible default, the exact legacy recovery-profile migration, and the retained 10.77.7.2/24 direct-connect values.
+- Made Stop + Replay's existing shared qualified latest-clip path explicit and report `PLAYBACK_VERIFIED` only after its acknowledged Set, explicit Play, and `P.Clip.Mediabox.Status=Playing` gate complete.
+- Added focused regression coverage without changing the camera-qualified Thumbnail, Set-retry, Set-to-Play, timeout, persistent `/linear`, telemetry, or 100 ms zoom behavior.
+
+## 0.2.13-operator-polish
+
+- Added the compact `/operator` console with complete live-qualified recording, playback, menu/cursor, assignable, automatic-mode, focus, and zoom controls.
+- Routed operator controls through the shared Command Engine so REST, TCP, sequences, VSM, and the web UI use the same qualified Sony mappings.
+- Replaced the fixed Thumbnail-to-Set assumption with bounded Set retries keyed to the FS7 RPC acknowledgement, followed by explicit `P.Clip.Mediabox.Status=Playing` verification.
+- Added a 25-second default overall replay timeout while retaining conservative minimum Stop, first-Set, and Play delays.
+- Corrected Savona wire shapes: nested `Button.SendKeys`/automatic-adjustment parameters and array-wrapped property maps.
+- Added one `/rm.html` warmup request per camera Wi-Fi association for FS7 sessions that require the native remote handshake.
+- Expanded the bounded RAM-only bridge capture to both WebSocket directions and added the Playwright/CDP raw-capture tool.
+- Refined the Sequences page to offer only configured, qualified commands and clearly identify unavailable saved mappings.
+- Made H/J and the Zoom Wide/Tele buttons sustain repeated zoom velocity pulses while held, while retaining immediate stop on keyup, pointer release, blur, page hide, disconnect, and lost pointer capture.
+- Reused one authoritative subscribed Sony `/linear` connection for commands and camera state, removing per-command WebSocket setup and duplicate operator subscriptions.
+- Matched Sony's measured 100 ms zoom-write cadence with serialized acknowledgements; a clean live three-second hold produced 30 movement writes plus one release stop in each direction.
+- Preserved Stop + Replay's bounded Thumbnail readiness retries by normalizing persistent-socket receive expiry to the established Sony RPC-timeout result.
+
 ## 0.2.12-integration-cleanup
 
 - Refreshed the repository and documentation around the current WT32-ETH01/LAN8720 hardware and real-camera-tested Sony native workflow.

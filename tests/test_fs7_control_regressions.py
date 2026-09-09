@@ -16,7 +16,10 @@ class Fs7ControlRegressionTests(unittest.TestCase):
 
     def test_02_rec_review_no_longer_depends_on_assignable_6(self):
         self.assertIn('[[\\"Thumbnail\\"]]', CFG)
-        self.assertIn('[[\\"Set\\"]]', ENGINE)
+        self.assertIn('runMapped("cursor_set")', ENGINE)
+        self.assertIn('Set accepted after', ENGINE)
+        self.assertIn('P.Clip.Mediabox.Status', ENGINE)
+        self.assertIn('latest clip playback verified', ENGINE)
         self.assertIn('migrateFs7NativeControlMappingsV4', CFG)
         self.assertNotIn('Requires FS7 Assignable Button 6 = Rec Review', CFG)
 
@@ -25,7 +28,7 @@ class Fs7ControlRegressionTests(unittest.TestCase):
         self.assertIn('Camera.WhiteBalance', CFG)
 
     def test_04_version_is_controls_release(self):
-        self.assertIn('FS7B_VERSION=\\"0.2.12-integration-cleanup\\"', PIO)
+        self.assertIn('FS7B_VERSION=\\"0.2.13-field-patch\\"', PIO)
 
 if __name__ == '__main__':
     unittest.main()

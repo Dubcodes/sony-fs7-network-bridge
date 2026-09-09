@@ -17,6 +17,7 @@ class SonyProxy {
   void clearCapture();
   String captureJson();
   uint16_t port() const { return 8081; }
+  uint8_t activeLinearSessions() const { return activeLinearSessions_; }
 
  private:
   struct CaptureEntry {
@@ -51,6 +52,7 @@ class SonyProxy {
   portMUX_TYPE captureMux_ = portMUX_INITIALIZER_UNLOCKED;
   portMUX_TYPE sessionMux_ = portMUX_INITIALIZER_UNLOCKED;
   uint8_t activeSessions_ = 0;
+  volatile uint8_t activeLinearSessions_ = 0;
   TaskHandle_t listenerTask_ = nullptr;
 
   static void listenerTaskThunk(void *arg);

@@ -8,8 +8,8 @@ const char *COMMAND_PATH = "/commands.json";
 const char *TELEMETRY_PATH = "/telemetry.json";
 const char *VSM_GENERIC_PATH = "/vsm_generic.json";
 const char *SEQUENCES_PATH = "/sequences.json";
-constexpr uint32_t CONFIG_SCHEMA_VERSION = 2;
-constexpr uint32_t COMMAND_SCHEMA_VERSION = 4;
+constexpr uint32_t CONFIG_SCHEMA_VERSION = 4;
+constexpr uint32_t COMMAND_SCHEMA_VERSION = 5;
 
 String ipOrDefault(JsonVariantConst v, const char *fallback) {
   return v.is<const char *>() ? String(v.as<const char *>()) : String(fallback);
@@ -18,6 +18,32 @@ String ipOrDefault(JsonVariantConst v, const char *fallback) {
 bool validIp(const String &text) {
   IPAddress ip;
   return ip.fromString(text);
+}
+
+uint32_t ipValue(const IPAddress &ip) {
+  return (static_cast<uint32_t>(ip[0]) << 24) |
+         (static_cast<uint32_t>(ip[1]) << 16) |
+         (static_cast<uint32_t>(ip[2]) << 8) |
+         static_cast<uint32_t>(ip[3]);
+}
+
+bool validStaticEthernet(const BridgeConfig &cfg) {
+  IPAddress address;
+  IPAddress subnet;
+  if (!address.fromString(cfg.ethernetIp) || !subnet.fromString(cfg.ethernetSubnet)) return false;
+
+  const uint32_t ip = ipValue(address);
+  const uint32_t mask = ipValue(subnet);
+  const uint32_t inverseMask = ~mask;
+  // A usable static address needs a non-zero, unicast host address and a
+  // contiguous, non-zero subnet mask. /32 is accepted for routed deployments.
+  if (ip == 0 || address[0] == 127 || address[0] >= 224 || mask == 0) return false;
+  if ((inverseMask & (inverseMask + 1U)) != 0) return false;
+  if (inverseMask != 0) {
+    const uint32_t host = ip & inverseMask;
+    if (host == 0 || host == inverseMask) return false;
+  }
+  return true;
 }
 
 
@@ -66,7 +92,8 @@ bool validLinearParams(const String &params) {
   if (params.length() == 0 || params.length() > 4096) return false;
   JsonDocument doc;
   if (deserializeJson(doc, params)) return false;
-  return doc.as<JsonVariantConst>().is<JsonArrayConst>();
+  JsonVariantConst root = doc.as<JsonVariantConst>();
+  return root.is<JsonArrayConst>() || root.is<JsonObjectConst>();
 }
 
 bool validTransport(const String &transport) {
@@ -110,7 +137,7 @@ void applyPublicFs7LinearDefaults(JsonObject commands, bool onlyWhenBlank) {
   // production start/stop workflow uses the exact recorder methods above/below.
   if (available("record_toggle"))
     setLinearMapping(commands, "record_toggle", "Button.SendKeys", "[[\"Rec\"]]",
-                     "public-exact");
+                     "fs7-native-live-exact");
   if (available("record_stop"))
     setLinearMapping(commands, "record_stop", "Clip.Recorder.Stop", "[]",
                      "fs7-native-rmt-exact");
@@ -120,13 +147,13 @@ void applyPublicFs7LinearDefaults(JsonObject commands, bool onlyWhenBlank) {
   // key transport, and an independent public example names Button.SendKeys Play.
   if (available("play"))
     setLinearMapping(commands, "play", "Button.SendKeys", "[[\"Play\"]]",
-                     "public-cross-source");
+                     "fs7-native-live-exact");
   if (available("pause"))
-    setLinearMapping(commands, "pause", "Button.SendKeys", "[[\"Play\"]]",
-                     "public-cross-source", "FS7 exposes Play as a Play/Pause one-shot");
+    setLinearMapping(commands, "pause", "Button.SendKeys", "[[\"Pause\"]]",
+                     "fs7-native-live-exact", "Play and Pause are distinct FS7 keys");
   if (available("stop_playback"))
     setLinearMapping(commands, "stop_playback", "Button.SendKeys", "[[\"Stop\"]]",
-                     "public-cross-source");
+                     "fs7-native-live-exact");
 
   // A public capture proves the Assignable.2 key form, while SKAARHOJ documents
   // six assign triggers for FS7. Populate only the FS7's six assign buttons.
@@ -135,24 +162,78 @@ void applyPublicFs7LinearDefaults(JsonObject commands, bool onlyWhenBlank) {
     if (!available(id.c_str())) continue;
     String params = "[[\"Assignable." + String(i) + "\"]]";
     setLinearMapping(commands, id.c_str(), "Button.SendKeys", params.c_str(),
-                     i == 2 ? "public-exact" : "public-pattern-plus-fs7-model");
+                     "fs7-native-live-exact");
   }
 
   // Exact FS7 native Cursor-page behaviour: Thumbnail opens the clip browser
   // and Set selects/plays the current (latest) clip. The command engine follows
-  // this mapped Thumbnail key with a short, bounded Set key delay so Rec Review
-  // no longer depends on any Assignable Button configuration.
+  // this mapped Thumbnail key with acknowledgement-driven bounded Set attempts
+  // so Rec Review no longer depends on an Assignable Button configuration.
   if (available("rec_review"))
     setLinearMapping(commands, "rec_review", "Button.SendKeys", "[[\"Thumbnail\"]]",
-                     "fs7-native-rmt-exact",
-                     "Bridge follows Thumbnail with Set to play the latest clip");
+                     "fs7-native-live-exact",
+                     "Bridge retries Set until acknowledged, then plays and verifies status");
 
   // Exact FS7 native Auto White action. rmt.html's CBAWBDialog calls
   // Process.Execute.AutomaticAdjustment with params=["Camera.WhiteBalance"].
   // Savona wraps params for this method, producing the wire array below.
   if (available("awb"))
     setLinearMapping(commands, "awb", "Process.Execute.AutomaticAdjustment",
-                     "[[\"Camera.WhiteBalance\"]]", "fs7-native-rmt-exact");
+                     "[[\"Camera.WhiteBalance\"]]", "fs7-native-live-exact");
+
+  if (available("abb"))
+    setLinearMapping(commands, "abb", "Process.Execute.AutomaticAdjustment",
+                     "[[\"Camera.BlackBalance\"]]", "fs7-native-rmt-exact");
+
+  const struct { const char *id; const char *key; } keys[] = {
+      {"previous_clip", "Prev"}, {"rewind", "Rewind"},
+      {"fast_forward", "Forward"}, {"next_clip", "Next"},
+      {"menu", "Menu"}, {"user_menu", "UserMenu"}, {"status", "Status"},
+      {"cursor_up", "UpArrow"}, {"cursor_down", "DownArrow"},
+      {"cursor_left", "LeftArrow"}, {"cursor_right", "RightArrow"},
+      {"cursor_set", "Set"}, {"cancel", "Cancel"}, {"thumbnail", "Thumbnail"},
+  };
+  for (const auto &key : keys) {
+    if (!available(key.id)) continue;
+    String params = "[[\"" + String(key.key) + "\"]]";
+    setLinearMapping(commands, key.id, "Button.SendKeys", params.c_str(),
+                     "fs7-native-live-exact");
+  }
+
+  if (available("focus_near"))
+    setLinearMapping(commands, "focus_near", "Property.SetValue",
+                     "[{\"Camera.Focus.Velocity\":-4}]", "fs7-native-live-exact");
+  if (available("focus_far"))
+    setLinearMapping(commands, "focus_far", "Property.SetValue",
+                     "[{\"Camera.Focus.Velocity\":4}]", "fs7-native-live-exact");
+  if (available("focus_stop"))
+    setLinearMapping(commands, "focus_stop", "Property.SetValue",
+                     "[{\"Camera.Focus.Velocity\":0}]", "fs7-native-live-exact");
+  if (available("zoom_in"))
+    setLinearMapping(commands, "zoom_in", "Property.SetValue",
+                     "[{\"Camera.Zoom.Velocity\":4}]", "fs7-native-live-exact");
+  if (available("zoom_out"))
+    setLinearMapping(commands, "zoom_out", "Property.SetValue",
+                     "[{\"Camera.Zoom.Velocity\":-4}]", "fs7-native-live-exact");
+  if (available("zoom_stop"))
+    setLinearMapping(commands, "zoom_stop", "Property.SetValue",
+                     "[{\"Camera.Zoom.Velocity\":0}]", "fs7-native-live-exact");
+
+  const struct { const char *id; const char *params; } modes[] = {
+      {"auto_shutter_on", "[{\"Camera.Shutter.SettingMethod\":\"Automatic\"}]"},
+      {"auto_shutter_off", "[{\"Camera.Shutter.SettingMethod\":\"Manual\"}]"},
+      {"agc_on", "[{\"Camera.Gain.SettingMethod\":\"Automatic\"}]"},
+      {"agc_off", "[{\"Camera.Gain.SettingMethod\":\"Manual\"}]"},
+      {"atw_on", "[{\"Camera.WhiteBalance.SettingMethod\":\"Automatic\"}]"},
+      {"atw_off", "[{\"Camera.WhiteBalance.SettingMethod\":\"Manual\"}]"},
+      {"sq_150_on", "[{\"Camera.SlowAndQuickMotion.Enabled\":true,\"Camera.SlowAndQuickMotion.HighFrameRate.Enabled\":false,\"Camera.SlowAndQuickMotion.FrameRate\":150}]"},
+      {"sq_off", "[{\"Camera.SlowAndQuickMotion.Enabled\":false,\"Camera.SlowAndQuickMotion.HighFrameRate.Enabled\":false,\"Camera.SlowAndQuickMotion.FrameRate\":150}]"},
+  };
+  for (const auto &mode : modes) {
+    if (available(mode.id))
+      setLinearMapping(commands, mode.id, "Property.SetValue", mode.params,
+                       "fs7-native-live-exact");
+  }
 
   // Other parameter-changing controls stay blank until their exact RPC
   // invocation is evidenced by the FS7 native page/capture.
@@ -197,16 +278,46 @@ void migrateFs7NativeControlMappingsV4(JsonObject commands) {
   }
 }
 
+void migrateFs7NativeWireMappingsV5(JsonObject commands) {
+  // Replace only known untouched v4 defaults. Savona wraps SendKeys' argument,
+  // so the exact FS7 wire format is a nested params array. Play and Pause are
+  // distinct key names.
+  for (const auto &cmd : COMMANDS) {
+    JsonObject m = commands[cmd.id];
+    if (String(m["transport"] | "") != "linear" ||
+        String(m["rpcMethod"] | "") != "Button.SendKeys") continue;
+    String params = m["rpcParams"] | "";
+    if (params.startsWith("[\"") && params.endsWith("\"]")) {
+      m["rpcParams"] = "[" + params + "]";
+      m["evidence"] = "fs7-native-live-exact";
+    }
+    if (String(cmd.id) == "pause" && String(m["rpcParams"] | "") == "[[\"Play\"]]") {
+      m["rpcParams"] = "[[\"Pause\"]]";
+      m["note"] = "Play and Pause are distinct FS7 keys";
+    }
+  }
+}
+
 bool configSane(const BridgeConfig &cfg, String &error) {
   if (cfg.deviceName.length() == 0 || cfg.deviceName.length() > 48) { error = "Device name must be 1-48 characters"; return false; }
   if (!validIp(cfg.ethernetIp) || !validIp(cfg.ethernetGateway) ||
       !validIp(cfg.ethernetSubnet) || !validIp(cfg.ethernetDns)) {
     error = "Ethernet addresses must be valid IPv4 addresses"; return false;
   }
+  if (!cfg.ethernetDhcp && !validStaticEthernet(cfg)) {
+    error = "Static Ethernet requires a usable unicast IP address and contiguous subnet mask";
+    return false;
+  }
   if (!validHost(cfg.cameraHost)) { error = "Camera host must be an IPv4 address or DNS hostname"; return false; }
   if (cfg.cameraSsid.length() > 32 || cfg.cameraWifiPassword.length() > 128 ||
       cfg.cameraUsername.length() > 64 || cfg.cameraPassword.length() > 128) {
     error = "Camera network or authentication field is too long"; return false;
+  }
+  if (cfg.recReviewSetDelayMs < 250 || cfg.recReviewSetDelayMs > 5000) {
+    error = "Thumbnail to first Set attempt must be 250-5000 ms"; return false;
+  }
+  if (cfg.recReviewPlayDelayMs < 250 || cfg.recReviewPlayDelayMs > 5000) {
+    error = "Set to Play delay must be 250-5000 ms"; return false;
   }
   return true;
 }
@@ -282,7 +393,9 @@ bool ConfigStore::loadConfig() {
 
   BridgeConfig loaded;
   const uint32_t schemaVersion = doc["configSchema"] | 1U;
-  loaded.deviceName = doc["deviceName"] | "FS7-Bridge-1";
+  // Preserve an existing configured name; only missing values receive the
+  // fresh-install hostname used by Ethernet/DHCP.
+  loaded.deviceName = doc["deviceName"] | "FS7-WiFi-Bridge";
   JsonObject eth = doc["ethernet"];
   loaded.ethernetDhcp = eth["dhcp"] | true;
   loaded.ethernetIp = ipOrDefault(eth["ip"], "10.77.7.2");
@@ -297,8 +410,15 @@ bool ConfigStore::loadConfig() {
   loaded.cameraUsername = camera["username"] | "admin";
   loaded.cameraPassword = camera["password"] | "pxw-fs7";
   loaded.cameraTimeoutMs = constrain(camera["timeoutMs"] | 1800U, 250U, 15000U);
-  loaded.replayDelayMs = std::min<uint32_t>(doc["replayDelayMs"] | 900U, 10000U);
-  loaded.replayTimeoutMs = constrain(doc["replayTimeoutMs"] | 15000U, 1000U, 60000U);
+  loaded.replayDelayMs = std::min<uint32_t>(doc["replayDelayMs"] | 3000U, 10000U);
+  loaded.recReviewSetDelayMs = constrain(doc["recReviewSetDelayMs"] | 4500U, 250U, 5000U);
+  loaded.recReviewPlayDelayMs = constrain(doc["recReviewPlayDelayMs"] | 2500U, 250U, 5000U);
+  if (schemaVersion < 4) {
+    if (loaded.replayDelayMs == 900U || loaded.replayDelayMs == 1500U) loaded.replayDelayMs = 3000U;
+    if (loaded.recReviewSetDelayMs == 1200U) loaded.recReviewSetDelayMs = 4500U;
+  }
+  loaded.replayTimeoutMs = constrain(doc["replayTimeoutMs"] | 25000U, 12000U, 60000U);
+  if (schemaVersion < 4 && loaded.replayTimeoutMs == 15000U) loaded.replayTimeoutMs = 25000U;
   loaded.telemetryFreshMs = constrain(doc["telemetryFreshMs"] | 2500U, 250U, 10000U);
   loaded.dryRun = doc["dryRun"] | false;
 
@@ -312,11 +432,16 @@ bool ConfigStore::loadConfig() {
   String error;
   if (!configSane(loaded, error)) return false;
   cfg_ = loaded;
-  if (migrateLegacyEthernet) {
+  const bool migrateConfigSchema = schemaVersion < CONFIG_SCHEMA_VERSION;
+  if (migrateConfigSchema) {
     if (saveConfigValue(cfg_)) {
-      Serial.println("[storage] migrated legacy 10.77.7.2 Ethernet default to DHCP");
+      if (migrateLegacyEthernet) {
+        Serial.println("[storage] migrated legacy 10.77.7.2 Ethernet default to DHCP");
+      }
+      Serial.printf("[storage] migrated bridge config schema to %lu\n",
+                    static_cast<unsigned long>(CONFIG_SCHEMA_VERSION));
     } else {
-      Serial.println("[storage] warning: DHCP migration active in RAM but could not be persisted");
+      Serial.println("[storage] warning: config migration active in RAM but could not be persisted");
     }
   }
   return true;
@@ -344,6 +469,8 @@ bool ConfigStore::saveConfigValue(const BridgeConfig &value) {
   camera["password"] = value.cameraPassword;
   camera["timeoutMs"] = value.cameraTimeoutMs;
   doc["replayDelayMs"] = value.replayDelayMs;
+  doc["recReviewSetDelayMs"] = value.recReviewSetDelayMs;
+  doc["recReviewPlayDelayMs"] = value.recReviewPlayDelayMs;
   doc["replayTimeoutMs"] = value.replayTimeoutMs;
   doc["telemetryFreshMs"] = value.telemetryFreshMs;
   doc["dryRun"] = value.dryRun;
@@ -376,7 +503,9 @@ bool ConfigStore::updateConfigJson(const String &json, String &error) {
     if (!camera["timeoutMs"].isNull()) next.cameraTimeoutMs = constrain(camera["timeoutMs"].as<uint32_t>(), 250U, 15000U);
   }
   if (!doc["replayDelayMs"].isNull()) next.replayDelayMs = std::min<uint32_t>(doc["replayDelayMs"].as<uint32_t>(), 10000U);
-  if (!doc["replayTimeoutMs"].isNull()) next.replayTimeoutMs = constrain(doc["replayTimeoutMs"].as<uint32_t>(), 1000U, 60000U);
+  if (!doc["recReviewSetDelayMs"].isNull()) next.recReviewSetDelayMs = doc["recReviewSetDelayMs"].as<uint32_t>();
+  if (!doc["recReviewPlayDelayMs"].isNull()) next.recReviewPlayDelayMs = doc["recReviewPlayDelayMs"].as<uint32_t>();
+  if (!doc["replayTimeoutMs"].isNull()) next.replayTimeoutMs = constrain(doc["replayTimeoutMs"].as<uint32_t>(), 12000U, 60000U);
   if (!doc["telemetryFreshMs"].isNull()) next.telemetryFreshMs = constrain(doc["telemetryFreshMs"].as<uint32_t>(), 250U, 10000U);
   if (!doc["dryRun"].isNull()) next.dryRun = doc["dryRun"].as<bool>();
   if (!configSane(next, error)) return false;
@@ -408,6 +537,8 @@ String ConfigStore::configJson(bool redactSecrets) const {
   camera["passwordIsDefault"] = cfg_.cameraPassword == "pxw-fs7";
   camera["timeoutMs"] = cfg_.cameraTimeoutMs;
   doc["replayDelayMs"] = cfg_.replayDelayMs;
+  doc["recReviewSetDelayMs"] = cfg_.recReviewSetDelayMs;
+  doc["recReviewPlayDelayMs"] = cfg_.recReviewPlayDelayMs;
   doc["replayTimeoutMs"] = cfg_.replayTimeoutMs;
   doc["telemetryFreshMs"] = cfg_.telemetryFreshMs;
   doc["dryRun"] = cfg_.dryRun;
@@ -522,6 +653,7 @@ bool ConfigStore::loadCommandMap() {
     // First repair known untouched v2 defaults, then fill any remaining blanks.
     if (schema < 3) migrateFs7NativeRecordMappingsV3(commands);
     if (schema < 4) migrateFs7NativeControlMappingsV4(commands);
+    if (schema < 5) migrateFs7NativeWireMappingsV5(commands);
     applyPublicFs7LinearDefaults(commands, true);
     doc["commandSchema"] = COMMAND_SCHEMA_VERSION;
   }

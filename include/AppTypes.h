@@ -8,7 +8,7 @@
 #endif
 
 struct BridgeConfig {
-  String deviceName = "FS7-Bridge-1";
+  String deviceName = "FS7-WiFi-Bridge";
 
   // Normal LAN default: DHCP. The static fields remain as an explicit
   // direct-connect/recovery profile and are only applied when DHCP is disabled.
@@ -25,8 +25,10 @@ struct BridgeConfig {
   String cameraPassword = "pxw-fs7";
   uint32_t cameraTimeoutMs = 1800;
 
-  uint32_t replayDelayMs = 900;
-  uint32_t replayTimeoutMs = 15000;
+  uint32_t replayDelayMs = 3000;
+  uint32_t recReviewSetDelayMs = 4500;
+  uint32_t recReviewPlayDelayMs = 2500;
+  uint32_t replayTimeoutMs = 25000;
   uint32_t telemetryFreshMs = 2500;
   bool dryRun = false;
 };
@@ -57,7 +59,7 @@ struct CommandDescriptor {
   bool defaultVisible;
 };
 
-constexpr size_t COMMAND_COUNT = 32;
+constexpr size_t COMMAND_COUNT = 57;
 extern const std::array<CommandDescriptor, COMMAND_COUNT> COMMANDS;
 
 struct CameraStateDescriptor {

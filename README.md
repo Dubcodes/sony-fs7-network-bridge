@@ -2,9 +2,9 @@
 
 WT32-ETH01 Ethernet-to-Wi-Fi control bridge for Sony PXW-FS7 cameras. It gives an isolated wired control network a browser operator console, a versioned REST API, simple ASCII TCP control, sequences, and a transport-neutral integration model while keeping the camera on its own Wi-Fi link.
 
-Current firmware: `0.2.12-integration-cleanup`
+Current firmware: `0.2.13-field-patch`
 
-This is an engineering/field-test prototype, not a production-certified appliance. It has connected to a real FS7, proxied Sony's native remote, established the `/linear` WebSocket transport, read live properties, and started/stopped recording. Broader property mapping, long-duration soak testing, and facility-specific integration remain ongoing.
+This is a functional experimental/personal project, not a supported commercial product or production-certified appliance. It has operated with a real FS7, including Sony native proxying, `/linear` control and telemetry, recording, playback, focus, and zoom.
 
 ## Topology
 
@@ -27,9 +27,10 @@ The bridge explicitly binds camera-side HTTP and `/linear` sockets to Wi-Fi. Thi
 - WT32-ETH01 LAN8720 Ethernet with DHCP by default and optional static addressing
 - FS7 camera Wi-Fi configuration and reconnect
 - custom operator console at `/operator`, including keyboard control
+- press-and-hold H/J zoom control with repeated motion commands and release/blur/page-hide safety stop
 - Sony native remote fallback at `/sony-native`, proxied from the connected camera on TCP 8081
 - native Sony HTTP and evidence-backed `/linear` WebSocket/MessagePack RPC
-- record start/stop, Rec Review/latest-clip workflows, Stop + Replay, Auto White, and Auto Black
+- record start/stop, acknowledgement-driven Rec Review/latest-clip workflows, Stop + Replay, Auto White, and Auto Black
 - eight non-blocking sequences with arbitration, waits, timeouts, and abort
 - REST API under `/api/v1`
 - line-oriented ASCII TCP control on port 5000
@@ -58,11 +59,11 @@ Earlier ESP32 DevKit/W5500 work is historical and is not the current hardware ta
 1. Install Python 3, Node.js, and PlatformIO Core.
 2. Run the validators, host tests, and build shown below.
 3. Flash the WT32 over a 3.3 V logic USB-to-TTL adapter using the GPIO0 boot procedure in `docs/FIRST_FLASH.md`.
-4. Connect Ethernet to a DHCP-enabled control LAN and find the leased address in the 115200-baud serial log.
-5. Open `/setup`, select the FS7 SSID, enter camera Wi-Fi and Basic Auth credentials, save, and reconnect.
+4. Connect Ethernet to a DHCP-enabled control LAN and find the leased address and default hostname `FS7-WiFi-Bridge` in the 115200-baud serial log.
+5. Open `/setup`, select the FS7 SSID, enter camera Wi-Fi and Basic Auth credentials, save, and reconnect. Use `/network` for wired DHCP/static settings.
 6. Verify the camera connection, then use `/operator`. Use `/sony-native` if the custom console lacks a needed control.
 
-For an isolated direct cable without DHCP, select static addressing in setup. The retained recovery profile is bridge `10.77.7.2/24` and laptop `10.77.7.1/24`; it is not an automatic fallback.
+For an isolated direct cable without DHCP, select static addressing on `/network`. The retained recovery profile is bridge `10.77.7.2/24` and laptop `10.77.7.1/24`; it is not an automatic fallback. Camera Wi-Fi and management Ethernet remain separate interfaces, and Sony traffic is explicitly bound to Wi-Fi.
 
 ## Operator and configuration pages
 
@@ -70,7 +71,8 @@ For an isolated direct cable without DHCP, select static addressing in setup. Th
 - `/sony-native` — live Sony remote fallback through the bridge proxy
 - `/` — configurable command/status surface
 - `/layout` — operator button and data-tile layout
-- `/setup` — network, camera authentication, diagnostics, and OTA
+- `/setup` — camera authentication, system diagnostics, and application OTA
+- `/network` — wired Ethernet DHCP/static configuration
 - `/telemetry` — camera-state extraction and diagnostics
 - `/sequences` — sequence configuration, trigger, status, and abort
 - `/discovery` — safe Sony transport probes and mapping tools
@@ -82,7 +84,7 @@ The stock web/control surfaces are unauthenticated. Deploy only on a trusted, is
 
 REST clients use the stable `/api/v1` surface. TCP clients connect to port 5000 and send one LF- or CRLF-terminated command per line. `PING` returns `PONG`; quiet single-client sessions are retained for five minutes, after which clients reconnect. Port 5000 remains the default and existing commands and IDs are unchanged.
 
-The most practical initial Lawo VSM path is an outbound generic TCP connection to the bridge. REST is also available where an HTTP-capable VSM/GadgetServer workflow is approved. Legacy Simple REST material in `vsm/legacy/` is historical and unverified against the current API.
+Generic TCP/REST slots provide a future adapter boundary. Native Ember+, full VSM integration, and CyanView integration are outside this completed checkpoint. Legacy Simple REST material in `vsm/legacy/` is historical and unverified against the current API.
 
 See `docs/API.md` for endpoint semantics and `docs/INTEGRATION.md` for TCP, VSM, future Ember+, CyanView, and other third-party integration boundaries.
 
@@ -103,7 +105,7 @@ After the initial serial flash, upload `.pio/build/wt32-eth01/firmware.bin` from
 
 ## Discovery tools
 
-`tools/fs7_proxy.py`, `fs7_asset_scan.py`, `fs7_log_summarize.py`, and `fs7_feedback_analyze.py` support evidence-driven mapping from a camera the operator owns. Captures and downloaded camera assets are local-only and ignored by Git. This repository does not distribute captured Sony web assets.
+`tools/fs7_native_capture.py`, `fs7_proxy.py`, `fs7_asset_scan.py`, `fs7_log_summarize.py`, and `fs7_feedback_analyze.py` support evidence-driven mapping from a camera the operator owns. Captures and downloaded camera assets are local-only and ignored by Git. This repository does not distribute captured Sony web assets.
 
 See `docs/SONY_DISCOVERY.md` and `docs/CAPTURE_SESSION.md` before collecting new evidence. Mock endpoints are test fixtures only and must never be treated as Sony protocol facts.
 

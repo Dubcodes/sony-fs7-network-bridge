@@ -54,12 +54,19 @@ CommandResult CommandEngine::runMapped(const String &id, const String &fallbackI
 
   if (sonyResult.isLinear) {
     if (!sonyResult.commandOk) {
-      result.statusCode = 502;
-      result.message = sonyResult.error.length()
-          ? sonyResult.error
-          : ("Sony /linear RPC failed for " + actualId);
-      status_.lastError = result.message;
-      return result;
+      const bool thumbnailMayAlreadyBeOpen =
+          id == "rec_review" && mapping.rpcMethod == "Button.SendKeys" &&
+          mapping.rpcParams == "[[\"Thumbnail\"]]" &&
+          sonyResult.error.indexOf("Timed out waiting for Sony RPC response") >= 0;
+      if (!thumbnailMayAlreadyBeOpen) {
+        result.statusCode = 502;
+        result.message = sonyResult.error.length()
+            ? sonyResult.error
+            : ("Sony /linear RPC failed for " + actualId);
+        status_.lastError = result.message;
+        return result;
+      }
+      Serial.println("[rec-review] Thumbnail key was not acknowledged; probing Set readiness");
     }
   } else if (sonyResult.httpStatus < 200 || sonyResult.httpStatus >= 300) {
     result.statusCode = 502;
@@ -69,30 +76,67 @@ CommandResult CommandEngine::runMapped(const String &id, const String &fallbackI
     return result;
   }
 
-  // The FS7 native Cursor page reliably plays the latest clip by opening
-  // Thumbnail and then pressing Set. When the default Rec Review mapping is the
-  // exact native Thumbnail key, complete that two-key operation here. This avoids
-  // depending on Assignable.6 (which may be mapped to SHUTTER or anything else).
+  // Live FS7 qualification showed that latest-clip playback is three distinct
+  // operations: Thumbnail, Set, then Play. Thumbnail population is variable.
+  // An ignored Set produces no matched RPC response, while an accepted Set is
+  // acknowledged immediately. Use that acknowledgement as the readiness gate.
   if (id == "rec_review" && mapping.transport == "linear" &&
       mapping.rpcMethod == "Button.SendKeys" &&
       mapping.rpcParams == "[[\"Thumbnail\"]]") {
-    delay(400);
+    const uint32_t deadlineMs = started + store_.config().replayTimeoutMs;
+    delay(store_.config().recReviewSetDelayMs);
     yield();
-    SonyCommandMapping setKey;
-    setKey.id = "rec_review_set";
-    setKey.transport = "linear";
-    setKey.rpcMethod = "Button.SendKeys";
-    setKey.rpcParams = "[[\"Set\"]]";
-    uint32_t setStarted = millis();
-    SonyResponse setResult = sony_.send(setKey, 4096);
-    status_.lastSonyResponseMs = millis() - setStarted;
-    status_.lastSonyHttpStatus = setResult.httpStatus;
-    status_.cameraReachable = setResult.transportOk;
-    result.sonyHttpStatus = setResult.httpStatus;
-    if (!setResult.transportOk || !setResult.commandOk) {
-      result.statusCode = setResult.transportOk ? 502 : 503;
-      result.message = "Thumbnail opened, but Set failed";
-      if (setResult.error.length()) result.message += ": " + setResult.error;
+
+    uint16_t attempts = 0;
+    bool setAccepted = false;
+    while (!due(millis(), deadlineMs)) {
+      ++attempts;
+      CommandResult setResult = runMapped("cursor_set");
+      if (setResult.ok) { setAccepted = true; break; }
+      const bool ignored = setResult.message.indexOf("Timed out waiting for Sony RPC response") >= 0;
+      if (!ignored) {
+        result.statusCode = setResult.statusCode;
+        result.message = "Thumbnail opened, but Set failed: " + setResult.message;
+        status_.lastError = result.message;
+        return result;
+      }
+      if (due(millis() + 350U, deadlineMs)) {
+        result.statusCode = 504;
+        result.message = "Thumbnail did not become selectable before the overall timeout";
+        status_.lastError = result.message;
+        return result;
+      }
+      delay(350);
+      yield();
+    }
+    if (!setAccepted) {
+      result.statusCode = 504;
+      result.message = "Thumbnail did not become selectable before the overall timeout";
+      status_.lastError = result.message;
+      return result;
+    }
+
+    Serial.printf("[rec-review] Set accepted after %u attempt(s), %lu ms after Thumbnail\n",
+                  attempts, static_cast<unsigned long>(millis() - started));
+    delay(store_.config().recReviewPlayDelayMs);
+    yield();
+    if (due(millis(), deadlineMs)) {
+      result.statusCode = 504;
+      result.message = "Latest clip selected, but the overall timeout expired before Play";
+      status_.lastError = result.message;
+      return result;
+    }
+    CommandResult playResult = runMapped("play");
+    if (!playResult.ok) {
+      result.statusCode = playResult.statusCode;
+      result.message = "Latest clip selected, but Play failed: " + playResult.message;
+      status_.lastError = result.message;
+      return result;
+    }
+    String playbackError;
+    if (!waitForPlayback(deadlineMs, playbackError)) {
+      result.statusCode = 504;
+      result.message = playbackError;
       status_.lastError = result.message;
       return result;
     }
@@ -100,9 +144,34 @@ CommandResult CommandEngine::runMapped(const String &id, const String &fallbackI
 
   result.ok = true;
   result.statusCode = 200;
-  result.message = id == "rec_review" ? "latest clip playback dispatched" : "ok";
+  result.message = id == "rec_review" ? "latest clip playback verified" : "ok";
   applyOptimisticState(id);
   return result;
+}
+
+bool CommandEngine::waitForPlayback(uint32_t deadlineMs, String &error) {
+  while (!due(millis(), deadlineMs)) {
+    const uint32_t remaining = deadlineMs - millis();
+    const uint32_t probeTimeout = remaining < 1200U ? remaining : 1200U;
+    SonyResponse probe = sony_.linearRequest(
+        "Property.GetValue", "[{\"P.Clip.Mediabox.Status\":null}]", probeTimeout);
+    status_.cameraReachable = probe.transportOk;
+    status_.lastSonyHttpStatus = probe.httpStatus;
+    if (probe.commandOk &&
+        (probe.body == "Playing" ||
+         probe.body.indexOf("P.Clip.Mediabox.Status=Playing") >= 0)) {
+      Serial.println("[rec-review] P.Clip.Mediabox.Status=Playing verified");
+      return true;
+    }
+    if (!probe.transportOk) {
+      error = "Play was sent, but camera status verification lost the camera connection";
+      return false;
+    }
+    delay(250);
+    yield();
+  }
+  error = "Play was accepted, but P.Clip.Mediabox.Status did not become Playing before timeout";
+  return false;
 }
 
 bool CommandEngine::freshState(const String &id) const {
@@ -198,7 +267,7 @@ CommandResult CommandEngine::abortStopReplay() {
   return {true, 200, "Stop + Replay aborted", 0};
 }
 
-bool CommandEngine::dispatchReview() {
+bool CommandEngine::dispatchLatestClipPlayback() {
   CommandResult review = runMapped("rec_review");
   if (!review.ok) {
     finishMacroError("Stop succeeded but Rec Review failed: " + review.message);
@@ -235,7 +304,7 @@ void CommandEngine::loop() {
         macroState_ = MacroState::WaitReady;
         status_.macroPhase = "CAMERA_READY";
         // Respect the configured minimum delay even when the camera reports ready immediately.
-        if (due(now, minReviewMs_)) dispatchReview();
+        if (due(now, minReviewMs_)) dispatchLatestClipPlayback();
       } else {
         status_.macroPhase = freshStateSince("writing", macroStartedMs_) && cameraState_.boolValue("writing", false)
             ? "WRITING" : "WAIT_CAMERA_STATE";
@@ -249,7 +318,7 @@ void CommandEngine::loop() {
 
     case MacroState::FallbackDelay:
       status_.macroPhase = "WAIT_DELAY";
-      if (due(now, minReviewMs_)) dispatchReview();
+      if (due(now, minReviewMs_)) dispatchLatestClipPlayback();
       break;
 
     case MacroState::Idle:
@@ -268,10 +337,10 @@ void CommandEngine::finishMacroError(const String &message) {
 
 void CommandEngine::finishMacroSuccess() {
   status_.macroBusy = false;
-  status_.macroPhase = "REVIEW_DISPATCHED";
+  status_.macroPhase = "PLAYBACK_VERIFIED";
   macroState_ = MacroState::Idle;
   arbiter_.release(OperationOwner::StopReplay);
-  Serial.println("[macro] Stop + Replay sequence dispatched");
+  Serial.println("[macro] Stop + Replay playback verified");
 }
 
 void CommandEngine::applyOptimisticState(const String &id) {

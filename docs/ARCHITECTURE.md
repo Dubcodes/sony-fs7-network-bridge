@@ -1,6 +1,6 @@
 # Architecture
 
-Firmware `0.2.12-integration-cleanup` runs on a WT32-ETH01 (ESP32, LAN8720A, 4 MB flash).
+Firmware `0.2.13-field-patch` runs on a WT32-ETH01 (ESP32, LAN8720A, 4 MB flash).
 
 ```text
           wired control network

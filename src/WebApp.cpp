@@ -49,6 +49,7 @@ void WebApp::begin() {
   server_.on("/", HTTP_GET, [this]() { server_.send_P(200, "text/html; charset=utf-8", CONTROL_HTML); });
   server_.on("/operator", HTTP_GET, [this]() { server_.send_P(200, "text/html; charset=utf-8", OPERATOR_HTML); });
   server_.on("/layout", HTTP_GET, [this]() { server_.send_P(200, "text/html; charset=utf-8", LAYOUT_HTML); });
+  server_.on("/network", HTTP_GET, [this]() { server_.send_P(200, "text/html; charset=utf-8", NETWORK_HTML); });
   server_.on("/setup", HTTP_GET, [this]() { server_.send_P(200, "text/html; charset=utf-8", SETUP_HTML); });
   server_.on("/discovery", HTTP_GET, [this]() { server_.send_P(200, "text/html; charset=utf-8", DISCOVERY_HTML); });
   server_.on("/sony-native", HTTP_GET, [this]() { server_.send_P(200, "text/html; charset=utf-8", SONY_NATIVE_HTML); });
@@ -79,6 +80,38 @@ void WebApp::begin() {
     String err;
     if (store_.updateConfigJson(server_.arg("plain"), err)) sendMessage(200, "configuration saved", true);
     else sendMessage(400, err);
+  });
+
+  server_.on("/api/v1/network-config", HTTP_GET, [this]() {
+    const BridgeConfig &cfg = store_.config();
+    JsonDocument doc;
+    doc["dhcp"] = cfg.ethernetDhcp;
+    doc["ip"] = cfg.ethernetIp;
+    doc["gateway"] = cfg.ethernetGateway;
+    doc["subnet"] = cfg.ethernetSubnet;
+    doc["dns"] = cfg.ethernetDns;
+    String out;
+    serializeJson(doc, out);
+    sendJson(200, out);
+  });
+  server_.on("/api/v1/network-config", HTTP_POST, [this]() {
+    if (!requireAutomationIdle("change Ethernet configuration")) return;
+    if (!requireBodyUnder(2048)) return;
+    JsonDocument input;
+    if (deserializeJson(input, server_.arg("plain")) || !input.is<JsonObject>()) {
+      sendMessage(400, "Invalid network configuration JSON");
+      return;
+    }
+    JsonDocument update;
+    update["ethernet"].set(input.as<JsonObjectConst>());
+    String body;
+    serializeJson(update, body);
+    String err;
+    if (store_.updateConfigJson(body, err)) {
+      sendMessage(200, "Ethernet settings saved; reboot required", true);
+    } else {
+      sendMessage(400, err);
+    }
   });
 
   server_.on("/api/v1/command-map", HTTP_GET, [this]() { sendJson(200, store_.commandMapJson()); });
@@ -326,6 +359,10 @@ String WebApp::statusJson() {
   cam["optimisticPlayback"] = status_.optimisticPlayback;
   cam["macroBusy"] = status_.macroBusy;
   cam["macroPhase"] = status_.macroPhase; cam["macroElapsedMs"] = status_.macroBusy && status_.macroStartedMs ? millis() - status_.macroStartedMs : 0;
+  cam["linearConnected"] = sony_.linearConnected();
+  cam["backendLinearConnections"] = sony_.linearConnected() ? 1 : 0;
+  cam["nativeProxyLinearConnections"] = proxy_.activeLinearSessions();
+  cam["linearConnections"] = (sony_.linearConnected() ? 1 : 0) + proxy_.activeLinearSessions();
   cam["recordingFeedback"] = rec && rec->valid; cam["playbackFeedback"] = play && play->valid;
   cam["recordingFresh"] = recordingFresh; cam["playbackFresh"] = playbackFresh;
   JsonObject net = doc["network"].to<JsonObject>(); net["subnetOverlap"] = status_.subnetOverlap;

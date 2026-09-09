@@ -2,7 +2,7 @@
 
 ## Qualified release
 
-Release `0.2.12-integration-cleanup` was locally validated on 2026-09-08 with:
+Release candidate `0.2.13-field-patch` was locally validated on 2026-09-09 with:
 
 - Python 3.12
 - PlatformIO Core 6.1.19
@@ -26,14 +26,16 @@ GitHub Actions runs the same validators, host suite, and physical-target compile
 ## Latest local result
 
 - both static validators: pass
-- host tests: 89/89 pass
+- host tests: 105/105 pass
 - WT32-ETH01 build: success with `-Wall -Wextra`
-- static RAM: 74,592 / 327,680 bytes (22.8%)
-- application flash: 1,367,336 / 1,966,080 bytes (69.5%)
-- `firmware.bin`: 1,367,744 bytes (SHA-256 `3f18a18af3adbd5841836e32de86faf484a2bfb85327464eb30159f83f0b02e6`)
+- static RAM: 74,656 / 327,680 bytes (22.8%)
+- application flash: 1,391,908 / 1,966,080 bytes (70.8%)
+- `firmware.bin`: 1,392,320 bytes (SHA-256 `C20A690CC01B6B10DD76B0A4C28CE67E92442BC917E117C21EB260440528FAEE`)
 
 ## What this proves
 
 The checks cover source/configuration invariants, Ethernet and Wi-Fi binding, OTA ownership/failure paths, native proxy behavior, `/linear` framing contracts, evidence-backed command mappings, operator-console contracts, sequence/arbitration safety, typed generic feedback, API identity, TCP idle/keepalive behavior, capture redaction, and a real WT32 compiler/linker build.
 
 Host tests are structural/model contracts, not a substitute for hardware integration. Existing real-camera evidence covers connectivity, the native proxy/remote, `/linear`, live properties, and record start/stop. Long-duration Ethernet/Wi-Fi coexistence, all property mappings, failure recovery under field conditions, and facility controller integrations still require operational testing.
+
+Live responsiveness and continuous-zoom measurements are documented in [RESPONSIVENESS_QUALIFICATION.md](RESPONSIVENESS_QUALIFICATION.md). Wire timing and release-stop behavior are qualified; perceived lens smoothness remains an operator-side physical observation.

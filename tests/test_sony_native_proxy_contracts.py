@@ -11,7 +11,7 @@ PIO = (ROOT / "platformio.ini").read_text(encoding="utf-8")
 
 class SonyNativeProxyContracts(unittest.TestCase):
     def test_version_and_listener(self):
-        self.assertIn('FS7B_VERSION=\\"0.2.12-integration-cleanup\\"', PIO)
+        self.assertIn('FS7B_VERSION=\\"0.2.13-field-patch\\"', PIO)
         self.assertIn('constexpr uint16_t PROXY_PORT = 8081', CPP)
         self.assertIn('sonyProxy.begin();', MAIN)
 
@@ -44,7 +44,7 @@ class SonyNativeProxyContracts(unittest.TestCase):
         self.assertIn('std::array<CaptureEntry, 16>', HDR)
         self.assertIn('MAX_CAPTURE_BYTES = 256', CPP)
         self.assertNotIn('LittleFS', CPP)
-        self.assertIn('if (!fromBrowser) return;', CPP)
+        self.assertIn('fromBrowser ? "browser-to-camera" : "camera-to-browser"', CPP)
 
     def test_capture_api_and_native_page_exist(self):
         for path in ['/api/v1/sony/capture', '/api/v1/sony/capture/start', '/api/v1/sony/capture/stop', '/api/v1/sony/capture/clear']:

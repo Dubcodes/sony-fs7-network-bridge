@@ -7,7 +7,7 @@ All integrations must use the bridge's semantic commands, sequences, and state. 
 Connect from the wired control network to `<bridge-ip>:5000`. The server sends:
 
 ```text
-FS7-BRIDGE 0.2.12-integration-cleanup READY\r\n
+FS7-BRIDGE 0.2.13-field-patch READY\r\n
 ```
 
 Send one ASCII/UTF-8 command per line. LF and CRLF are accepted. Every non-empty line receives exactly one LF/CRLF-terminated response. Commands and identifiers are case-insensitive where the protocol already normalizes them; state and command IDs should be sent exactly as listed by `HELP` and `/api/v1/catalog`.

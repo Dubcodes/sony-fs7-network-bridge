@@ -56,7 +56,9 @@ class SonyLinearContracts(unittest.TestCase):
         self.assertIn('Bridge follows Thumbnail with Set to play the latest clip', STORE)
         self.assertIn('setLinearMapping(commands, "rec_review", "Button.SendKeys", "[[\\"Thumbnail\\"]]"', STORE)
         self.assertIn('mapping.rpcParams == "[[\\"Thumbnail\\"]]"', ENGINE)
-        self.assertIn('setKey.rpcParams = "[[\\"Set\\"]]"', ENGINE)
+        self.assertIn('runMapped("cursor_set")', ENGINE)
+        self.assertIn('Timed out waiting for Sony RPC response', ENGINE)
+        self.assertIn('waitForPlayback', ENGINE)
 
     def test_07_native_awb_is_exact_but_other_parameter_controls_remain_evidence_limited(self):
         default_section = STORE.split('void applyPublicFs7LinearDefaults', 1)[1].split('bool configSane', 1)[0]
@@ -66,9 +68,10 @@ class SonyLinearContracts(unittest.TestCase):
         self.assertNotIn('setLinearMapping(commands, "gain_up"', default_section)
 
     def test_08_map_schema_migrates_only_known_legacy_defaults(self):
-        self.assertIn('COMMAND_SCHEMA_VERSION = 4', STORE)
+        self.assertIn('COMMAND_SCHEMA_VERSION = 5', STORE)
         self.assertIn('migrateFs7NativeRecordMappingsV3', STORE)
         self.assertIn('migrateFs7NativeControlMappingsV4', STORE)
+        self.assertIn('migrateFs7NativeWireMappingsV5', STORE)
         self.assertIn('applyPublicFs7LinearDefaults(commands, true)', STORE)
         self.assertIn('path.length() == 0 && rpcMethod.length() == 0', STORE)
         self.assertIn('migrated evidence-backed Sony /linear command mappings', STORE)
@@ -92,6 +95,22 @@ class SonyLinearContracts(unittest.TestCase):
         self.assertNotIn('ffd33f5776607938', LINEAR)
         self.assertIn('cfg_.cameraUsername + ":" + cfg_.cameraPassword', LINEAR)
         self.assertNotIn('SHA2Builder', LINEAR)
+
+    def test_12_backend_reuses_one_subscribed_linear_connection(self):
+        self.assertIn('persistent subscribed /linear session established', LINEAR)
+        self.assertIn('Notify.Subscribe', LINEAR)
+        self.assertIn('if (fd_ >= 0 && connectedWifiIp_ == wifiIp)', LINEAR)
+        self.assertNotIn('close(fd);\n  return result;', LINEAR)
+        self.assertIn('sonyRemote.loop();', (ROOT / 'src' / 'main.cpp').read_text(encoding='utf-8'))
+
+    def test_13_linear_connection_count_is_observable(self):
+        self.assertIn('cam["backendLinearConnections"]', WEB)
+        self.assertIn('cam["nativeProxyLinearConnections"]', WEB)
+        self.assertIn('cam["linearConnections"]', WEB)
+
+    def test_14_socket_timeout_is_normalized_to_rpc_timeout(self):
+        self.assertIn('if (error == "Timed out waiting for WebSocket data") break;', LINEAR)
+        self.assertIn('error = "Timed out waiting for Sony RPC response";', LINEAR)
 
 
 if __name__ == '__main__':
