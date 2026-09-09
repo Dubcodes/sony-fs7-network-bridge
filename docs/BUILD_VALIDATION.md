@@ -26,11 +26,11 @@ GitHub Actions runs the same validators, host suite, and physical-target compile
 ## Latest local result
 
 - both static validators: pass
-- host tests: 105/105 pass
+- host tests: 106/106 pass
 - WT32-ETH01 build: success with `-Wall -Wextra`
 - static RAM: 74,656 / 327,680 bytes (22.8%)
-- application flash: 1,391,908 / 1,966,080 bytes (70.8%)
-- `firmware.bin`: 1,392,320 bytes (SHA-256 `C20A690CC01B6B10DD76B0A4C28CE67E92442BC917E117C21EB260440528FAEE`)
+- application flash: 1,392,388 / 1,966,080 bytes (70.8%)
+- `firmware.bin`: 1,392,800 bytes (SHA-256 `C71D0DC782EC861E88D982B1557B6AC20F494C0D650A05EA0DC43F7342FA1242`)
 
 ## What this proves
 

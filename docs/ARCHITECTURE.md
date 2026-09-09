@@ -41,6 +41,8 @@ The shared store holds 23 semantic values with validity, update time, and freshn
 
 Stop + Replay dispatches stop, then prefers a fresh post-stop transition in this order: `ready=true`, `writing=false`, `recording=false`. If no usable telemetry exists, it uses the bounded configured delay. Overall timeout and abort paths fail closed.
 
+Known checkpoint limitation: once latest-clip playback enters its synchronous Thumbnail/Set/Play verification phase, HTTP and TCP servicing can be delayed until that bounded operation finishes, so an abort is not guaranteed to interrupt that phase immediately.
+
 ## Sequences
 
 Eight non-blocking slots support semantic command steps, timed waits, and waits for fresh state. Sequences never contain Sony URLs or payloads. They use the same command engine and arbiter as manual interfaces.

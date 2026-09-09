@@ -849,7 +849,10 @@ bool ConfigStore::saveTelemetryMapJson(const String &json, String &error) {
 void ConfigStore::setDefaultVsmGenericMap() {
   JsonDocument doc;
   JsonArray triggers = doc["triggers"].to<JsonArray>();
-  const char *defaultCommands[16] = {"record_start","stop_replay","record_stop","rec_review","awb","play","pause","stop_playback","auto_iris","iris_up","iris_down","gain_up","gain_down","nd_up","nd_down",""};
+  const char *defaultCommands[16] = {
+      "record_start", "stop_replay", "record_stop", "rec_review",
+      "awb", "play", "pause", "stop_playback",
+      "", "", "", "", "", "", "", ""};
   for (int i = 0; i < 16; ++i) {
     JsonObject o = triggers.add<JsonObject>();
     o["slot"] = i + 1; o["label"] = "Trigger " + String(i + 1); o["command"] = defaultCommands[i];

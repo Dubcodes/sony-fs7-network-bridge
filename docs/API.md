@@ -65,6 +65,8 @@ Raw requests and mapping updates are bounded and validated. Capture is opt-in, R
 ```text
 GET  /api/v1/config
 POST /api/v1/config
+GET  /api/v1/network-config
+POST /api/v1/network-config
 GET  /api/v1/wifi-scan
 POST /api/v1/reconnect-camera
 GET  /api/v1/layout
@@ -74,7 +76,7 @@ POST /api/v1/reboot
 POST /api/v1/update
 ```
 
-Credential fields are redacted in normal config/export responses. Runtime-changing updates are rejected with 409 while automation owns the camera. OTA accepts an application image and only schedules reboot after a successful update.
+`/api/v1/network-config` reads and updates wired Ethernet DHCP/static configuration; saved changes take effect after reboot. Credential fields are redacted in normal config/export responses. Runtime-changing updates are rejected with 409 while automation owns the camera. OTA accepts an application image and only schedules reboot after a successful update.
 
 ## TCP control
 

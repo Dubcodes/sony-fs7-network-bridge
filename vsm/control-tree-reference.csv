@@ -7,13 +7,13 @@ Trigger,Trigger05,Auto White,awb,Momentary trigger
 Trigger,Trigger06,Play,play,Momentary trigger
 Trigger,Trigger07,Pause,pause,Momentary trigger
 Trigger,Trigger08,Stop Playback,stop_playback,Momentary trigger
-Trigger,Trigger09,Auto Iris,auto_iris,Momentary trigger
-Trigger,Trigger10,Iris +,iris_up,Momentary trigger
-Trigger,Trigger11,Iris -,iris_down,Momentary trigger
-Trigger,Trigger12,Gain +,gain_up,Momentary trigger
-Trigger,Trigger13,Gain -,gain_down,Momentary trigger
-Trigger,Trigger14,ND +,nd_up,Momentary trigger
-Trigger,Trigger15,ND -,nd_down,Momentary trigger
+Trigger,Trigger09,Spare,,Unmapped by default
+Trigger,Trigger10,Spare,,Unmapped by default
+Trigger,Trigger11,Spare,,Unmapped by default
+Trigger,Trigger12,Spare,,Unmapped by default
+Trigger,Trigger13,Spare,,Unmapped by default
+Trigger,Trigger14,Spare,,Unmapped by default
+Trigger,Trigger15,Spare,,Unmapped by default
 Trigger,Trigger16,Spare,,Unmapped by default
 Bool,B1,Camera reachable,bridge.camera_reachable,Read-only feedback
 Bool,B2,Recording,camera.recording,Real telemetry when mapped; optimistic fallback before then

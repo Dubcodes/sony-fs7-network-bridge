@@ -7,6 +7,8 @@
 - Preserved DHCP as the backward-compatible default, the exact legacy recovery-profile migration, and the retained 10.77.7.2/24 direct-connect values.
 - Made Stop + Replay's existing shared qualified latest-clip path explicit and report `PLAYBACK_VERIFIED` only after its acknowledged Set, explicit Play, and `P.Clip.Mediabox.Status=Playing` gate complete.
 - Added focused regression coverage without changing the camera-qualified Thumbnail, Set-retry, Set-to-Play, timeout, persistent `/linear`, telemetry, or 100 ms zoom behavior.
+- Left fresh VSM trigger slots 9–16 spare and limited new trigger choices to qualified commands while preserving unavailable persisted selections visibly.
+- Documented the wired network API and the bounded synchronous Stop + Replay servicing limitation.
 
 ## 0.2.13-operator-polish
 

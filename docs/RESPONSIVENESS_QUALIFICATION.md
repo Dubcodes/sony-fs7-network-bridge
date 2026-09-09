@@ -49,6 +49,6 @@ A final clean `/operator` browser pass on the installed image, with no Sony Nati
 
 Wire cadence, acknowledgement serialization, and release-stop behavior are qualified. Final judgement of perceived lens smoothness and suitability at the operator position remains a physical camera/operator observation.
 
-Record start and the complete Stop + Replay path were repeated on the final OTA image. Record returned an acknowledged Sony RPC, Stop + Replay reached `REVIEW_DISPATCHED`, and Stop Playback then returned the camera from review.
+Record start and the complete Stop + Replay path were repeated on the final OTA image. Record returned an acknowledged Sony RPC, Stop + Replay reached verified playback, and Stop Playback then returned the camera from review.
 
 An auxiliary `--no-precache` native-page asset-burst probe made the bridge temporarily unresponsive and it recovered by rebooting. Normal sequential-precache Sony Native captures succeeded; the unsupported burst probe remains a proxy stress/failure-recovery observation, not part of the accepted command/zoom timing path.
