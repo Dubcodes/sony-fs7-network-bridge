@@ -75,6 +75,9 @@ String ControlProtocol::processLine(String line) {
   else return "ERR unknown command";
 
   id.trim();
+  if (isHoldOnlyCommand(id)) {
+    return "ERR " + id + " 409 hold-only lens movement requires an explicit hold/release controller";
+  }
   CommandResult r = engine_.execute(id);
   if (r.ok) return "OK " + id + " " + r.message;
   return "ERR " + id + " " + String(r.statusCode) + " " + r.message;

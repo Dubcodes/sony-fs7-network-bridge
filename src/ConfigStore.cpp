@@ -64,30 +64,55 @@ bool validHost(const String &text) {
   return true;
 }
 
-void canonicalizeVsmGenericMap(JsonObjectConst source, JsonDocument &clean) {
-  JsonArray triggers = clean["triggers"].to<JsonArray>();
-  for (int i = 0; i < 16; ++i) {
-    JsonObjectConst existing = source["triggers"][i].as<JsonObjectConst>();
-    JsonObject dst = triggers.add<JsonObject>();
-    dst["slot"] = i + 1;
-    dst["label"] = existing["label"].is<const char *>()
-        ? existing["label"].as<String>() : ("Trigger " + String(i + 1));
-    dst["command"] = existing["command"].is<const char *>()
-        ? existing["command"].as<String>() : "";
+void canonicalizeVsmGroup(JsonVariantConst source, JsonArray output, int count,
+                          const char *labelPrefix, const char *valueKey) {
+  JsonArrayConst input = source.as<JsonArrayConst>();
+  JsonObjectConst selected[16] = {};
+  bool claimed[16] = {};
+
+  // Explicit slots take priority. For duplicates, the first valid explicit
+  // entry wins deterministically; later duplicates are ignored.
+  for (JsonVariantConst value : input) {
+    if (!value.is<JsonObjectConst>()) continue;
+    JsonObjectConst entry = value.as<JsonObjectConst>();
+    if (!entry["slot"].is<int>()) continue;
+    const int slot = entry["slot"].as<int>();
+    if (slot < 1 || slot > count || claimed[slot - 1]) continue;
+    selected[slot - 1] = entry;
+    claimed[slot - 1] = true;
   }
 
+  // Legacy entries without a valid slot retain their array-position meaning,
+  // but never displace an explicit assignment.
+  for (int i = 0; i < count && i < static_cast<int>(input.size()); ++i) {
+    JsonObjectConst entry = input[i].as<JsonObjectConst>();
+    if (entry.isNull()) continue;
+    const bool validSlot = entry["slot"].is<int>() &&
+                           entry["slot"].as<int>() >= 1 &&
+                           entry["slot"].as<int>() <= count;
+    if (validSlot || claimed[i]) continue;
+    selected[i] = entry;
+    claimed[i] = true;
+  }
+
+  for (int i = 0; i < count; ++i) {
+    JsonObjectConst existing = selected[i];
+    JsonObject dst = output.add<JsonObject>();
+    dst["slot"] = i + 1;
+    dst["label"] = existing["label"].is<const char *>()
+        ? existing["label"].as<String>() : (String(labelPrefix) + " " + String(i + 1));
+    dst[valueKey] = existing[valueKey].is<const char *>()
+        ? existing[valueKey].as<String>() : "";
+  }
+}
+
+void canonicalizeVsmGenericMap(JsonObjectConst source, JsonDocument &clean) {
+  JsonArray triggers = clean["triggers"].to<JsonArray>();
+  canonicalizeVsmGroup(source["triggers"], triggers, 16, "Trigger", "command");
   const char *groups[] = {"bools", "ints", "floats", "texts"};
   for (const char *group : groups) {
     JsonArray slots = clean[group].to<JsonArray>();
-    for (int i = 0; i < 8; ++i) {
-      JsonObjectConst existing = source[group][i].as<JsonObjectConst>();
-      JsonObject dst = slots.add<JsonObject>();
-      dst["slot"] = i + 1;
-      dst["label"] = existing["label"].is<const char *>()
-          ? existing["label"].as<String>() : (String(group) + " " + String(i + 1));
-      dst["source"] = existing["source"].is<const char *>()
-          ? existing["source"].as<String>() : "";
-    }
+    canonicalizeVsmGroup(source[group], slots, 8, group, "source");
   }
 }
 

@@ -34,6 +34,8 @@ HELP
 
 Errors are deterministic text beginning with `ERR`; command errors include semantic ID and status code, for example `ERR record_start 409 <message>`. Automation should parse the leading token and status code, not human message wording.
 
+Generic TCP and VSM controllers must not use the hold-only movement commands `focus_near`, `focus_far`, `zoom_in`, or `zoom_out`. ASCII TCP rejects them with `ERR <id> 409 ...` because safe lens movement requires an explicit hold/release controller that always sends the matching stop. `focus_stop` and `zoom_stop` remain valid safe commands.
+
 The firmware serves one TCP client at a time. A quiet connection is closed after five minutes. Send `PING` more often than five minutes (60 seconds is a conservative integration setting), and reconnect on EOF, timeout, Ethernet interruption, or bridge reboot. A new client is accepted after the active client disconnects or times out. Do not depend on TCP keepalive alone because application input refreshes the idle timer.
 
 ### Lawo VSM concept
@@ -61,7 +63,7 @@ No body is required for command/trigger POSTs. Preserve HTTP status: 409 means t
 
 ## Generic trigger/value model
 
-The `/vsm` page maps 16 trigger slots to semantic commands or `sequence:<n>`, plus eight each of Bool, Int, Float, and Text feedback slots. REST exposes these through `/api/v1/vsm/*`; native adapters should call the same `VsmGeneric` boundary. Invalid or stale typed data is `null`.
+The `/vsm` page maps 16 trigger slots to semantic commands or `sequence:<n>`, plus eight each of Bool, Int, Float, and Text feedback slots. REST exposes these through `/api/v1/vsm/*`; native adapters should call the same `VsmGeneric` boundary. Invalid or stale typed data is `null`. Saved maps honor valid explicit `slot` numbers; the first explicit entry for a duplicate slot wins, while entries with absent or invalid slot fields use their array position only when that position is still free.
 
 ## Future native Ember+
 
